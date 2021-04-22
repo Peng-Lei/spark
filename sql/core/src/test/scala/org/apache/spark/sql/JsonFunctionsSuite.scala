@@ -840,4 +840,66 @@ class JsonFunctionsSuite extends QueryTest with SharedSparkSession {
       }
     }
   }
+
+  test("SPARK-35094-01") {
+    val schemaForFieldWhichWillHaveWrongValue =
+      StructField("problematicName", StringType, nullable = true)
+    val nestedFieldWhichNotSatisfyJsonMessage = StructField(
+      "badNestedField",
+      StructType(
+        Seq(StructField("SomethingWhichNotInJsonMessage", IntegerType, nullable = true)))
+    )
+    val nestedFieldWithNestedFieldWhichNotSatisfyJsonMessage =
+      StructField(
+        "nestedField",
+        StructType(
+          Seq(nestedFieldWhichNotSatisfyJsonMessage, schemaForFieldWhichWillHaveWrongValue))
+      )
+    val customSchema = StructType(Seq(
+      schemaForFieldWhichWillHaveWrongValue,
+      nestedFieldWithNestedFieldWhichNotSatisfyJsonMessage
+    ))
+
+    val jsonStringToTest =
+      """{"problematicName":"ThisValueWillBeOverwritten",
+        |"nestedField":{"badNestedField":"14","problematicName":"thisValueInTwoPlaces"}}
+        |""".stripMargin
+    val df = List(jsonStringToTest)
+      .toDF("json")
+      // issue happen only in permissive mode during best effort
+      .select(from_json($"json", customSchema).as("toBeFlatten"))
+      .select("toBeFlatten.*")
+    df.show(truncate = false)
+
+    assert(
+      df.select("problematicName").as[String].first()
+        == "ThisValueWillBeOverwritten",
+      "wrong value in root schema, parser take value from column with same name " +
+        "but in another nested elvel"
+    )
+  }
+
+  test("SPARK-35094-02") {
+    val s1 = StructField("name", StringType, nullable = true)
+    val s2_1 =
+      StructField(
+        "badNestedField",
+        StructType(
+          Seq(StructField("SomethingWhichNotInJsonMessage", IntegerType, nullable = true))))
+    val s2 =
+      StructField("nestedField", StructType(Seq(s2_1, s1)))
+    val customSchema = StructType(Seq(s1, s2))
+
+    val jsonStringToTest =
+      """{"name":"v1","nestedField":{"badNestedField":"14","name":"v2"}}"""
+    val df = List(jsonStringToTest)
+      .toDF("json")
+      .select(from_json($"json", customSchema).as("toBeFlatten"))
+      .select("toBeFlatten.*")
+
+    assert(
+      df.select("name").as[String].first() == "v1",
+      "wrong value in root schema, parser take value from column with same name " +
+        "but in another nested elvel")
+  }
 }
