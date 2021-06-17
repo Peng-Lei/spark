@@ -1262,19 +1262,17 @@ class DateExpressionsSuite extends SparkFunSuite with ExpressionEvalHelper {
 
     withSQLConf(SQLConf.LEGACY_INTERVAL_ENABLED.key -> "false") {
       checkEvaluation(SubtractDates(Literal(end), Literal(end)), Duration.ZERO)
-      checkEvaluation(SubtractDates(Literal(end.plusDays(1)), Literal(end)), Duration.ofDays(1))
-      checkEvaluation(SubtractDates(Literal(end.minusDays(1)), Literal(end)), Duration.ofDays(-1))
-      checkEvaluation(SubtractDates(Literal(end), epochDate), Duration.ofDays(end.toEpochDay))
+      checkEvaluation(SubtractDates(Literal(end.plusDays(1)), Literal(end)), 1L)
+      checkEvaluation(SubtractDates(Literal(end.minusDays(1)), Literal(end)), -1L)
+      checkEvaluation(SubtractDates(Literal(end), epochDate), end.toEpochDay)
       checkEvaluation(SubtractDates(epochDate, Literal(end)),
-        Duration.ofDays(end.toEpochDay).negated())
+        -end.toEpochDay)
       checkEvaluation(
         SubtractDates(
           Literal(LocalDate.of(10000, 1, 1)),
           Literal(LocalDate.of(1, 1, 1))),
-        Duration.ofDays(ChronoUnit.DAYS.between( LocalDate.of(1, 1, 1), LocalDate.of(10000, 1, 1))))
-      checkExceptionInExpression[ArithmeticException](
-        SubtractDates(Literal(LocalDate.MAX), Literal(LocalDate.MIN)),
-        "overflow")
+        ChronoUnit.DAYS.between( LocalDate.of(1, 1, 1), LocalDate.of(10000, 1, 1)))
+
     }
     Seq(false, true).foreach { ansiIntervals =>
       checkConsistencyBetweenInterpretedAndCodegen(

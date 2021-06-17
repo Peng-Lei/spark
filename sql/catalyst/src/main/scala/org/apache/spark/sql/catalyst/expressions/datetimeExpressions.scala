@@ -2610,14 +2610,13 @@ case class SubtractDates(
 
   override def inputTypes: Seq[AbstractDataType] = Seq(DateType, DateType)
   override def dataType: DataType = {
-    // TODO(SPARK-35727): Return INTERVAL DAY from dates subtraction
-    if (legacyInterval) CalendarIntervalType else DayTimeIntervalType()
+    if (legacyInterval) CalendarIntervalType else DayTimeIntervalType(0, 0)
   }
 
   @transient
   private lazy val evalFunc: (Int, Int) => Any = legacyInterval match {
     case false => (leftDays: Int, rightDays: Int) =>
-      Math.multiplyExact(Math.subtractExact(leftDays, rightDays), MICROS_PER_DAY)
+      Math.subtractExact(leftDays, rightDays).toLong
     case true => (leftDays: Int, rightDays: Int) => subtractDates(leftDays, rightDays)
   }
 
@@ -2629,7 +2628,7 @@ case class SubtractDates(
     case false =>
       val m = classOf[Math].getName
       defineCodeGen(ctx, ev, (leftDays, rightDays) =>
-        s"$m.multiplyExact($m.subtractExact($leftDays, $rightDays), ${MICROS_PER_DAY}L)")
+        s"Long.valueOf($m.subtractExact($leftDays, $rightDays))")
     case true =>
       defineCodeGen(ctx, ev, (leftDays, rightDays) => {
         val dtu = DateTimeUtils.getClass.getName.stripSuffix("$")

@@ -21,16 +21,14 @@ import java.sql.{Date, Timestamp}
 import java.time.{Duration, Instant, LocalDate, LocalDateTime, Period}
 import java.time.temporal.ChronoUnit
 import java.util.Locale
-
 import org.apache.hadoop.io.{LongWritable, Text}
 import org.apache.hadoop.mapreduce.lib.input.{TextInputFormat => NewTextInputFormat}
 import org.scalatest.matchers.should.Matchers._
-
 import org.apache.spark.SparkException
 import org.apache.spark.sql.UpdateFieldsBenchmark._
 import org.apache.spark.sql.catalyst.expressions.{InSet, Literal, NamedExpression}
 import org.apache.spark.sql.catalyst.util.DateTimeTestUtils.{outstandingTimezonesIds, outstandingZoneIds}
-import org.apache.spark.sql.catalyst.util.DateTimeUtils
+import org.apache.spark.sql.catalyst.util.{DateTimeUtils}
 import org.apache.spark.sql.execution.ProjectExec
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.internal.SQLConf
@@ -2790,19 +2788,20 @@ class ColumnExpressionSuite extends QueryTest with SharedSparkSession {
           ).foreach { case (end, start) =>
             val df = Seq((end, start)).toDF("end", "start")
             val daysBetween = Duration.ofDays(ChronoUnit.DAYS.between(start, end))
-            checkAnswer(df.select($"end" - $"start"), Row(daysBetween))
+            val t1= df.select($"end" - $"start")
+            val t2 = t1.schema.head.dataType
+            val t3 = t1.head()
+            println(t1)
+            println(t2)
+            println(t3)
+            println(daysBetween)
+            println("diff days : " + ChronoUnit.DAYS.between(start, end))
+            println("..........")
+
+            //checkAnswer(df.select($"end" - $"start"), Row(daysBetween))
           }
         }
       }
-
-      val e = intercept[SparkException] {
-        Seq((LocalDate.ofEpochDay(0), LocalDate.of(500000, 1, 1)))
-          .toDF("start", "end")
-          .select($"end" - $"start")
-          .collect()
-      }.getCause
-      assert(e.isInstanceOf[ArithmeticException])
-      assert(e.getMessage.contains("long overflow"))
     }
   }
 
