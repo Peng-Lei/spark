@@ -25,7 +25,7 @@ import org.apache.spark.sql.catalyst.analysis.{FunctionRegistry, TypeCheckResult
 import org.apache.spark.sql.catalyst.analysis.TypeCheckResult.{TypeCheckFailure, TypeCheckSuccess}
 import org.apache.spark.sql.catalyst.expressions.codegen._
 import org.apache.spark.sql.catalyst.expressions.codegen.Block._
-import org.apache.spark.sql.catalyst.util.NumberConverter
+import org.apache.spark.sql.catalyst.util.{NumberConverter, TypeUtils}
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
 
@@ -1570,17 +1570,40 @@ case class WidthBucket(
     numBucket: Expression)
   extends QuaternaryExpression with ImplicitCastInputTypes with NullIntolerant {
 
-  override def inputTypes: Seq[AbstractDataType] = Seq(DoubleType, DoubleType, DoubleType, LongType)
+  override def inputTypes: Seq[AbstractDataType] = Seq(
+    TypeCollection(DoubleType, YearMonthIntervalType),
+    TypeCollection(DoubleType, YearMonthIntervalType),
+    TypeCollection(DoubleType, YearMonthIntervalType),
+    LongType)
+
+  override def checkInputDataTypes(): TypeCheckResult = {
+    super.checkInputDataTypes() match {
+      case TypeCheckSuccess =>
+        // keep the input(value, bound range) type is same
+        val types = Seq(value.dataType, minValue.dataType, maxValue.dataType)
+        TypeUtils.checkForSameTypeInputExpr(types, s"function $prettyName")
+      case f => f
+    }
+  }
+
   override def dataType: DataType = LongType
   override def nullable: Boolean = true
   override def prettyName: String = "width_bucket"
 
   override protected def nullSafeEval(input: Any, min: Any, max: Any, numBucket: Any): Any = {
-    WidthBucket.computeBucketNumber(
-      input.asInstanceOf[Double],
-      min.asInstanceOf[Double],
-      max.asInstanceOf[Double],
-      numBucket.asInstanceOf[Long])
+    value.dataType match {
+      case _: YearMonthIntervalType => WidthBucket.computeBucketNumber(
+        input.asInstanceOf[Integer].toDouble,
+        min.asInstanceOf[Integer].toDouble,
+        max.asInstanceOf[Integer].toDouble,
+        numBucket.asInstanceOf[Long])
+      case DoubleType => WidthBucket.computeBucketNumber(
+        input.asInstanceOf[Double],
+        min.asInstanceOf[Double],
+        max.asInstanceOf[Double],
+        numBucket.asInstanceOf[Long])
+    }
+
   }
 
   override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
