@@ -74,4 +74,15 @@ public interface CatalogPlugin {
   default String[] defaultNamespace() {
     return new String[0];
   }
+
+  /**
+   * Return all options for the catalog.
+   * <p>
+   * The method is used for querying the all options of catalog when it is initialized
+   *
+   * @return all options of the catalog
+   */
+  default CaseInsensitiveStringMap listOptions() {
+    return CaseInsensitiveStringMap.empty();
+  }
 }

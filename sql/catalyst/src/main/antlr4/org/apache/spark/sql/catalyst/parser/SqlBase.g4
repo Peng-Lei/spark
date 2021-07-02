@@ -218,6 +218,7 @@ statement
     | (DESC | DESCRIBE) TABLE? option=(EXTENDED | FORMATTED)?
         multipartIdentifier partitionSpec? describeColName?            #describeRelation
     | (DESC | DESCRIBE) QUERY? query                                   #describeQuery
+    | (DESC | DESCRIBE) CATALOG multipartIdentifier                    #describeCatalog
     | COMMENT ON namespace multipartIdentifier IS
         comment=(STRING | NULL)                                        #commentNamespace
     | COMMENT ON TABLE multipartIdentifier IS comment=(STRING | NULL)  #commentTable
@@ -1061,6 +1062,7 @@ ansiNonReserved
     | BY
     | CACHE
     | CASCADE
+    | CATALOG
     | CHANGE
     | CLEAR
     | CLUSTER
@@ -1542,6 +1544,7 @@ CACHE: 'CACHE';
 CASCADE: 'CASCADE';
 CASE: 'CASE';
 CAST: 'CAST';
+CATALOG: 'CATALOG'
 CHANGE: 'CHANGE';
 CHECK: 'CHECK';
 CLEAR: 'CLEAR';

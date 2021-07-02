@@ -3471,6 +3471,14 @@ class AstBuilder extends SqlBaseBaseVisitor[AnyRef] with SQLConfHelper with Logg
   }
 
   /**
+   * Create a [[DescribeCatalogStatement]].
+   */
+  override def visitDescribeCatalog(
+      ctx: DescribeCatalogContext) : LogicalPlan = withOrigin(ctx) {
+    DescribeCatalogStatement()
+  }
+
+  /**
    * Create a [[ShowTables]] command.
    */
   override def visitShowTables(ctx: ShowTablesContext): LogicalPlan = withOrigin(ctx) {

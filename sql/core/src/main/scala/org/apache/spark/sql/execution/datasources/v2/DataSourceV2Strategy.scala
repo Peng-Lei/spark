@@ -281,6 +281,9 @@ class DataSourceV2Strategy(session: SparkSession) extends Strategy with Predicat
             "DESC TABLE COLUMN", toPrettySQL(nested))
       }
 
+    case r: DescribeCatalog =>
+      DescribeCatalogExec(r.output, r.catalogManager) :: Nil
+
     case DropTable(r: ResolvedTable, ifExists, purge) =>
       DropTableExec(r.catalog, r.identifier, ifExists, purge, invalidateTableCache(r)) :: Nil
 

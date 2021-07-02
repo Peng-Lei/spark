@@ -299,6 +299,11 @@ case class UseStatement(isNamespaceSet: Boolean, nameParts: Seq[String]) extends
 case class ShowCurrentNamespaceStatement() extends LeafParsedStatement
 
 /**
+ * A DESCRIBE CATALOG statement, as parsed from SQL
+ */
+case class DescribeCatalogStatement() extends LeafParsedStatement
+
+/**
  *  CREATE FUNCTION statement, as parsed from SQL
  */
 case class CreateFunctionStatement(
