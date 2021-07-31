@@ -140,7 +140,9 @@ class SparkFileAlreadyExistsException(errorClass: String, messageParameters: Arr
 /**
  * File not found exception thrown from Spark with an error class.
  */
-class SparkFileNotFoundException(errorClass: String, messageParameters: Array[String])
+class SparkFileNotFoundException(
+    errorClass: String,
+    messageParameters: Array[String])
   extends FileNotFoundException(
     SparkThrowableHelper.getMessage(errorClass, messageParameters)) with SparkThrowable {
 

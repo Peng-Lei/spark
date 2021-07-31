@@ -32,7 +32,7 @@ import org.apache.hadoop.fs.permission.FsPermission
 import org.codehaus.commons.compiler.CompileException
 import org.codehaus.janino.InternalCompilerException
 
-import org.apache.spark.{Partition, SparkArithmeticException, SparkClassNotFoundException, SparkConcurrentModificationException, SparkDateTimeException, SparkException, SparkFileAlreadyExistsException, SparkFileNotFoundException, SparkIndexOutOfBoundsException, SparkNoSuchMethodException, SparkRuntimeException, SparkSecurityException, SparkSQLException, SparkSQLFeatureNotSupportedException, SparkUpgradeException}
+import org.apache.spark.{Partition, SparkArithmeticException, SparkClassNotFoundException, SparkConcurrentModificationException, SparkDateTimeException, SparkException, SparkFileAlreadyExistsException, SparkFileNotFoundException, SparkIndexOutOfBoundsException, SparkIOException, SparkNoSuchMethodException, SparkRuntimeException, SparkSecurityException, SparkSQLException, SparkSQLFeatureNotSupportedException, SparkUpgradeException}
 import org.apache.spark.executor.CommitDeniedException
 import org.apache.spark.launcher.SparkLauncher
 import org.apache.spark.memory.SparkOutOfMemoryError
@@ -543,15 +543,13 @@ object QueryExecutionErrors {
   }
 
   def noRecordsFromEmptyDataReaderError(): Throwable = {
-    new IOException("No records should be returned from EmptyDataReader")
+    new SparkIOException(errorClass = "NON_RECORDS_FROM_EMPTY_DATA_READER",
+      messageParameters = Array.empty)
   }
 
   def fileNotFoundError(e: FileNotFoundException): Throwable = {
-    new FileNotFoundException(
-      e.getMessage + "\n" +
-        "It is possible the underlying files have been updated. " +
-        "You can explicitly invalidate the cache in Spark by " +
-        "recreating the Dataset/DataFrame involved.")
+    new SparkFileNotFoundException(errorClass = "CANNOT_FIND_FILE",
+      messageParameters = Array(e.getMessage))
   }
 
   def unsupportedSchemaColumnConvertError(
@@ -560,46 +558,51 @@ object QueryExecutionErrors {
       logicalType: String,
       physicalType: String,
       e: Exception): Throwable = {
-    val message = "Parquet column cannot be converted in " +
-      s"file $filePath. Column: $column, " +
-      s"Expected: $logicalType, Found: $physicalType"
-    new QueryExecutionException(message, e)
+    new QueryExecutionException(errorClass = "UNSUPPORTED_PARQUET_COLUMN_CONVERT",
+      messageParameters = Array(filePath, column, logicalType, physicalType), cause = e)
   }
 
   def cannotReadParquetFilesError(e: Exception): Throwable = {
-    val message = "Encounter error while reading parquet files. " +
-      "One possible cause: Parquet column cannot be converted in the " +
-      "corresponding files. Details: "
-    new QueryExecutionException(message, e)
+    new QueryExecutionException(errorClass = "CANNOT_READ_PARQUET_FILE",
+      messageParameters = Array.empty, cause = e)
   }
 
   def cannotCreateColumnarReaderError(): Throwable = {
+    // TODO Use SparkUnsupportedOperationException instead of UnsupportedOperationException
     new UnsupportedOperationException("Cannot create columnar reader.")
   }
 
   def invalidNamespaceNameError(namespace: Array[String]): Throwable = {
+    // TODO Use SparkIllegalArgumentException instead of IllegalArgumentException
     new IllegalArgumentException(s"Invalid namespace name: ${namespace.quoted}")
   }
 
   def unsupportedPartitionTransformError(transform: Transform): Throwable = {
+    // TODO Use SparkUnsupportedOperationException instead of UnsupportedOperationException
     new UnsupportedOperationException(
       s"SessionCatalog does not support partition transform: $transform")
   }
 
   def missingDatabaseLocationError(): Throwable = {
+    // TODO Use SparkIllegalArgumentException instead of IllegalArgumentException
     new IllegalArgumentException("Missing database location")
   }
 
   def cannotRemoveReservedPropertyError(property: String): Throwable = {
+    // TODO Use SparkUnsupportedOperationException instead of UnsupportedOperationException
     new UnsupportedOperationException(s"Cannot remove reserved property: $property")
   }
 
   def namespaceNotEmptyError(namespace: Array[String]): Throwable = {
+    // TODO Use SparkIllegalStateException instead of IllegalStateException
     new IllegalStateException(s"Namespace ${namespace.quoted} is not empty")
   }
 
-  def writingJobFailedError(cause: Throwable): Throwable = {
-    new SparkException("Writing job failed.", cause)
+  def writingJobFailedError(e: Throwable): Throwable = {
+    new SparkException(
+      errorClass = "WRITING_JOB_FAILED",
+      messageParameters = Array.empty,
+      cause = e)
   }
 
   def writingJobAbortedError(e: Throwable): Throwable = {
@@ -613,19 +616,33 @@ object QueryExecutionErrors {
       partId: Int, taskId: Long, attemptId: Int, stageId: Int, stageAttempt: Int): Throwable = {
     val message = s"Commit denied for partition $partId (task $taskId, attempt $attemptId, " +
       s"stage $stageId.$stageAttempt)"
-    new CommitDeniedException(message, stageId, partId, attemptId)
+    new CommitDeniedException(
+      stageId,
+      partId,
+      attemptId,
+      errorClass = "COMMIT_DENIED_ERROR",
+      messageParameters = Array(
+        partId.toString,
+        taskId.toString,
+        attemptId.toString,
+        stageId.toString,
+        stageAttempt.toString))
   }
 
   def unsupportedTableWritesError(ident: Identifier): Throwable = {
     new SparkException(
-      s"Table implementation does not support writes: ${ident.quoted}")
+      errorClass = "UNSUPPORTED_WRITE_TABLE",
+      messageParameters = Array(ident.quoted),
+      cause = null)
   }
 
   def cannotCreateJDBCTableWithPartitionsError(): Throwable = {
+    // TODO Use SparkUnsupportedOperationException instead of UnsupportedOperationException
     new UnsupportedOperationException("Cannot create JDBC table with partition")
   }
 
   def unsupportedUserSpecifiedSchemaError(): Throwable = {
+    // TODO Use SparkUnsupportedOperationException instead of UnsupportedOperationException
     new UnsupportedOperationException("user-specified schema")
   }
 
@@ -635,16 +652,20 @@ object QueryExecutionErrors {
 
   def fileLengthExceedsMaxLengthError(status: FileStatus, maxLength: Int): Throwable = {
     new SparkException(
-      s"The length of ${status.getPath} is ${status.getLen}, " +
-        s"which exceeds the max length allowed: ${maxLength}.")
+      errorClass = "LENGTH_EXCEED_MAX_LENGTH",
+      messageParameters = Array(status.toString, status.getLen.toString, maxLength.toString),
+      cause = null)
   }
 
   def unsupportedFieldNameError(fieldName: String): Throwable = {
-    new RuntimeException(s"Unsupported field name: ${fieldName}")
+    new SparkRuntimeException(
+      errorClass = "UNSUPPORTED_WRITE_COLUMN",
+      messageParameters = Array(fieldName))
   }
 
   def cannotSpecifyBothJdbcTableNameAndQueryError(
       jdbcTableName: String, jdbcQueryString: String): Throwable = {
+    // TODO Use SparkIllegalArgumentException instead of IllegalArgumentException
     new IllegalArgumentException(
       s"Both '$jdbcTableName' and '$jdbcQueryString' can not be specified at the same time.")
   }

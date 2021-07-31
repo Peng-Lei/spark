@@ -17,7 +17,7 @@
 
 package org.apache.spark.executor
 
-import org.apache.spark.TaskCommitDenied
+import org.apache.spark.{SparkThrowable, SparkThrowableHelper, TaskCommitDenied}
 
 /**
  * Exception thrown when a task attempts to commit output to HDFS but is denied by the driver.
@@ -26,8 +26,36 @@ private[spark] class CommitDeniedException(
     msg: String,
     jobID: Int,
     splitID: Int,
-    attemptNumber: Int)
-  extends Exception(msg) {
+    attemptNumber: Int,
+    errorClass: Option[String],
+    messageParameters: Array[String])
+  extends Exception(msg)  with SparkThrowable {
+
+  def this(msg: String, jobID: Int, splitID: Int, attemptNumber: Int) =
+    this(msg = msg,
+      jobID = jobID,
+      splitID = splitID,
+      attemptNumber = attemptNumber,
+      errorClass = None,
+      messageParameters = Array.empty)
+
+
+  def this(
+    jobID: Int,
+    splitID: Int,
+    attemptNumber: Int,
+    errorClass: String,
+    messageParameters: Array[String]) =
+      this(
+        msg = SparkThrowableHelper.getMessage(errorClass, messageParameters),
+        jobID = jobID,
+        splitID = splitID,
+        attemptNumber = attemptNumber,
+        errorClass = Some(errorClass),
+        messageParameters = messageParameters)
 
   def toTaskCommitDeniedReason: TaskCommitDenied = TaskCommitDenied(jobID, splitID, attemptNumber)
+
+  override def getErrorClass: String = errorClass.orNull
+  override def getSqlState: String = SparkThrowableHelper.getSqlState(errorClass.orNull)
 }

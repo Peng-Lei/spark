@@ -3,6 +3,29 @@
     "message" : [ "Field name %s is ambiguous and has %s matching fields in the struct." ],
     "sqlState" : "42000"
   },
+  "CANNOT_CREATE_COLUMNAR_READER" : {
+    "message" : [ "Cannot create columnar reader." ],
+    "sqlState" : "0A000"
+  },
+  "CANNOT_CREATE_JDBC_TABLE_WITH_PARTITIONS" : {
+    "message" : [ "Cannot create JDBC table with partition" ],
+    "sqlState" : "0A000"
+  },
+  "CANNOT_FIND_FILE" : {
+    "message" : [ "%s \n It is possible the underlying files have been updated. You can explicitly invalidate the cache in Spark by recreating the Dataset/DataFrame involved." ]
+  },
+  "CANNOT_READ_PARQUET_FILE" : {
+    "message" : [ "Encounter error while reading parquet files. One possible cause: Parquet column cannot be converted in the corresponding files. Details: " ]
+  },
+  "CANNOT_REMOVE_RESERVED_PROPERTY" : {
+    "message" : [ "Cannot remove reserved property: %s" ]
+  },
+  "CANNOT_SPECIFY_BOTH_JDBC_TABLE_NAME_AND_QUERY" : {
+    "message" : [ "Both '%s' and '%s' can not be specified at the same time." ]
+  },
+  "COMMIT_DENIED_ERROR" : {
+    "message" : [ "Commit denied for partition %s (task %s, attempt %s, stage %s.%s)" ]
+  },
   "CONCURRENT_QUERY_ERROR" : {
     "message" : [ "Another instance of this query was just started by a concurrent session." ]
   },
@@ -54,8 +77,20 @@
     "message" : [ "The fraction of sec must be zero. Valid range is [0, 60]." ],
     "sqlState" : "22023"
   },
+  "INVALID_NAMESPACE_NAME" : {
+    "message" : [ "Invalid namespace name: %s" ],
+    "sqlState" : "42000"
+  },
+  "LENGTH_EXCEED_MAX_LENGTH" : {
+    "message" : [ "The length of %s is %s, which exceeds the max length allowed: %s." ],
+    "sqlState" : "42000"
+  },
   "MISSING_COLUMN" : {
     "message" : [ "cannot resolve '%s' given input columns: [%s]" ],
+    "sqlState" : "42000"
+  },
+  "MISSING_DATABASE_LOCATION" : {
+    "message" : [ "Missing database location" ],
     "sqlState" : "42000"
   },
   "MISSING_METHOD" : {
@@ -66,12 +101,20 @@
     "message" : [ "Unknown static partition column: %s" ],
     "sqlState" : "42000"
   },
+  "NON_EMPTY_NAMESPACE" : {
+    "message" : [ "Namespace %s is not empty" ],
+    "sqlState" : "42000"
+  },
   "NON_LITERAL_PIVOT_VALUES" : {
     "message" : [ "Literal expressions required for pivot values, found '%s'" ],
     "sqlState" : "42000"
   },
   "NON_PARTITION_COLUMN" : {
     "message" : [ "PARTITION clause cannot contain a non-partition column name: %s" ],
+    "sqlState" : "42000"
+  },
+  "NON_RECORDS_FROM_EMPTY_DATA_READER" : {
+    "message" : [ "No records should be returned from EmptyDataReader" ],
     "sqlState" : "42000"
   },
   "PIVOT_VALUE_DATA_TYPE_MISMATCH" : {
@@ -97,12 +140,40 @@
     "message" : [ "Unsupported literal type %s %s" ],
     "sqlState" : "0A000"
   },
+  "UNSUPPORTED_PARQUET_COLUMN_CONVERT" : {
+    "message" : [ "Parquet column cannot be converted in file %s. Column: %s, Expected: %s, Found: %s" ],
+    "sqlState" : "0A000"
+  },
+  "UNSUPPORTED_PARTITION_TRANSFORM" : {
+    "message" : [ "SessionCatalog does not support partition transform: %s" ],
+    "sqlState" : "0A000"
+  },
   "UNSUPPORTED_TRANSACTION_BY_JDBC_SERVER" : {
     "message" : [ "The target JDBC server does not support transaction and can only support ALTER TABLE with a single action." ],
     "sqlState" : "0A000"
   },
+  "UNSUPPORTED_USER_SPECIFIED_SCHEMA" : {
+    "message" : [ "user-specified schema" ],
+    "sqlState" : "0A000"
+  },
+  "UNSUPPORTED_WRITE_COLUMN" : {
+    "message" : [ "Unsupported field name: %s" ],
+    "sqlState" : "0A000"
+  },
+  "UNSUPPORTED_WRITE_FOR_BINARY_FILE_DATASOURCE" : {
+    "message" : [ "Write is not supported for binary file data source" ],
+    "sqlState" : "0A000"
+  },
+  "UNSUPPORTED_WRITE_TABLE" : {
+    "message" : [ "Table implementation does not support writes: %s" ],
+    "sqlState" : "0A000"
+  },
   "WRITING_JOB_ABORTED" : {
     "message" : [ "Writing job aborted" ],
+    "sqlState" : "40000"
+  },
+  "WRITING_JOB_FAILED" : {
+    "message" : [ "Writing job failed" ],
     "sqlState" : "40000"
   }
 }

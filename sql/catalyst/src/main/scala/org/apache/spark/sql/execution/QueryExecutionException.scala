@@ -17,5 +17,28 @@
 
 package org.apache.spark.sql.execution
 
-class QueryExecutionException(message: String, cause: Throwable = null)
-  extends Exception(message, cause)
+import org.apache.spark.{SparkThrowable, SparkThrowableHelper}
+
+class QueryExecutionException(
+    message: String,
+    cause: Throwable,
+    errorClass: Option[String],
+    messageParameters: Array[String])
+  extends Exception(message, cause) with SparkThrowable {
+
+  def this(message: String, cause: Throwable) =
+    this(message = message, cause = cause, errorClass = None, messageParameters = Array.empty)
+
+  def this(message: String) =
+    this(message = message, cause = null)
+
+  def this(errorClass: String, messageParameters: Array[String], cause: Throwable = null) =
+    this(
+      message = SparkThrowableHelper.getMessage(errorClass, messageParameters),
+      cause = cause,
+      errorClass = Some(errorClass),
+      messageParameters = messageParameters)
+
+  override def getErrorClass: String = errorClass.orNull
+  override def getSqlState: String = SparkThrowableHelper.getSqlState(errorClass.orNull)
+}
