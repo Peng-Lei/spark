@@ -3,8 +3,35 @@
     "message" : [ "Field name %s is ambiguous and has %s matching fields in the struct." ],
     "sqlState" : "42000"
   },
+  "CANNOT_CREATE_PARQUET_CONVERTER" : {
+    "message" : [ "Unable to create Parquet converter for %s whose Parquet type is %s without decimal metadata. Please read this column/field as Spark BINARY type." ]
+  },
+  "CANNOT_CREATE_PARQUET_CONVERTER_FOR_DATA_TYPE" : {
+    "message" : [ "Unable to create Parquet converter for data type %s whose Parquet type is %s" ]
+  },
+  "CANNOT_CREATE_PARQUET_CONVERTER_FOR_DECIMAL_TYPE" : {
+    "message" : [ "Unable to create Parquet converter for decimal type %s whose Parquet type is $parquetType.  Parquet DECIMAL type can only be backed by INT32, INT64, FIXED_LEN_BYTE_ARRAY, or BINARY." ]
+  },
+  "CANNOT_CAST_NULL_LITERAL" : {
+    "message" : [ "null literals can't be casted to %s" ]
+  },
+  "CANNOT_FIND_USER_DEFINED_TYPE" : {
+    "message" : [ "%s is not an UserDefinedType. Please make sure registering an UserDefinedType for %s" ],
+    "sqlState" : "42000"
+  },
+  "CANNOT_LOAD_USER_DEFINED_TYPE" : {
+    "message" : [ "Can not load in UserDefinedType %s for user class %s." ]
+  },
   "CONCURRENT_QUERY_ERROR" : {
     "message" : [ "Another instance of this query was just started by a concurrent session." ]
+  },
+  "DATASOURCE_ONLY_SUPPORT_FILE_FORMAT" : {
+    "message" : [ "Only Data Sources providing FileFormat are supported: %s" ],
+    "sqlState" : "xxx"
+  },
+  "DATASOURCE_UNSUPPORTED_USER_SPECIFY_SCHEMA" : {
+    "message" : [ "%s source does not support user-specified schema." ],
+    "sqlState" : "xxx"
   },
   "DIVIDE_BY_ZERO" : {
     "message" : [ "divide by zero" ],
@@ -17,6 +44,9 @@
   "FAILED_RENAME_PATH" : {
     "message" : [ "Failed to rename %s to %s as destination already exists" ],
     "sqlState" : "22023"
+  },
+  "FAILED_SET_ORIGINAL_ACL_BACK" : {
+    "message" : [ "Failed to set original ACL %s back to the created path: %s. Exception: %s" ]
   },
   "FAILED_SET_ORIGINAL_PERMISSION_BACK" : {
     "message" : [ "Failed to set original permission %s back to the created path: %s. Exception: %s" ]
@@ -58,12 +88,28 @@
     "message" : [ "cannot resolve '%s' given input columns: [%s]" ],
     "sqlState" : "42000"
   },
+  "MISSING_FIELD_SCHEMA" : {
+    "message" : [ "fieldIndex on a Row without schema is undefined." ],
+    "sqlState" : "42000"
+  },
   "MISSING_METHOD" : {
     "message" : [ "A method named \"%s\" is not declared in any enclosing class nor any supertype" ],
     "sqlState" : "42000"
   },
   "MISSING_STATIC_PARTITION_COLUMN" : {
     "message" : [ "Unknown static partition column: %s" ],
+    "sqlState" : "42000"
+  },
+  "MULTI_FAILURES_IN_STAGE_MATERIALIZATION" : {
+    "message" : [ "Multiple failures in stage materialization." ],
+    "sqlState" : "42000"
+  },
+  "NEED_PUBLIC_CLASS" : {
+    "message" : [ "%s is not a public class. Only public classes are supported." ],
+    "sqlState" : "42000"
+  },
+  "NEED_SPECIFY_TIMEZONE_ID_FOR_TIMESTAMP" : {
+    "message" : [ "%s must supply timeZoneId parameter" ],
     "sqlState" : "42000"
   },
   "NON_LITERAL_PIVOT_VALUES" : {
@@ -89,16 +135,36 @@
   "UNABLE_TO_ACQUIRE_MEMORY" : {
     "message" : [ "Unable to acquire %s bytes of memory, got %s" ]
   },
+  "UNRECOGNIZED_COMPRESSION_SCHEMA_TYPE_ID" : {
+    "message" : [ "Unrecognized compression scheme type ID: %s" ],
+    "sqlState" : "42000"
+  },
   "UNRECOGNIZED_SQL_TYPE" : {
     "message" : [ "Unrecognized SQL type %s" ],
     "sqlState" : "42000"
+  },
+  "UNSUPPORTED_ADD_MULTI_PARTITION_ON_NONATOMIC_PARTITION_TABLE" : {
+    "message" : [ "Nonatomic partition table %s can not add multiple partitions." ],
+    "sqlState" : "0A000"
+  },
+  "UNSUPPORTED_GET_PARENT_LOGGER" : {
+    "message" : [ "%s.getParentLogger is not yet implemented." ],
+    "sqlState" : "0A000"
   },
   "UNSUPPORTED_LITERAL_TYPE" : {
     "message" : [ "Unsupported literal type %s %s" ],
     "sqlState" : "0A000"
   },
+  "UNSUPPORTED_PRIMITIVE_TYPE" : {
+    "message" : [ "Primitive types are not supported." ],
+    "sqlState" : "0A000"
+  },
   "UNSUPPORTED_TRANSACTION_BY_JDBC_SERVER" : {
     "message" : [ "The target JDBC server does not support transaction and can only support ALTER TABLE with a single action." ],
+    "sqlState" : "0A000"
+  },
+  "VALUE_AT_INDEX_IS_NULL" : {
+    "message" : [ "Value at index %s is null" ],
     "sqlState" : "0A000"
   },
   "WRITING_JOB_ABORTED" : {

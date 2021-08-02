@@ -1509,46 +1509,55 @@ object QueryExecutionErrors {
   }
 
   def unsupportedOperationExceptionError(): Throwable = {
+    // TODO Use SparkUnsupportedOperationException instead of UnsupportedOperationException
     new UnsupportedOperationException
   }
 
   def nullLiteralsCannotBeCastedError(name: String): Throwable = {
+    // TODO Use SparkUnsupportedOperationException instead of UnsupportedOperationException
     new UnsupportedOperationException(s"null literals can't be casted to $name")
   }
 
   def notUserDefinedTypeError(name: String, userClass: String): Throwable = {
-    new SparkException(s"$name is not an UserDefinedType. Please make sure registering " +
-        s"an UserDefinedType for ${userClass}")
+    new SparkException(errorClass = "CANNOT_FIND_USER_DEFINED_TYPE",
+      messageParameters = Array(name, userClass), cause = null)
   }
 
   def cannotLoadUserDefinedTypeError(name: String, userClass: String): Throwable = {
-    new SparkException(s"Can not load in UserDefinedType ${name} for user class ${userClass}.")
+    new SparkException(errorClass = "CANNOT_LOAD_USER_DEFINED_TYPE",
+      messageParameters = Array(name, userClass), cause = null)
   }
 
   def timeZoneIdNotSpecifiedForTimestampTypeError(): Throwable = {
+    // TODO Use SparkUnsupportedOperationException instead of UnsupportedOperationException
     new UnsupportedOperationException(
       s"${TimestampType.catalogString} must supply timeZoneId parameter")
   }
 
   def notPublicClassError(name: String): Throwable = {
+    // TODO Use SparkUnsupportedOperationException instead of UnsupportedOperationException
     new UnsupportedOperationException(
       s"$name is not a public class. Only public classes are supported.")
   }
 
   def primitiveTypesNotSupportedError(): Throwable = {
+    // TODO Use SparkUnsupportedOperationException instead of UnsupportedOperationException
     new UnsupportedOperationException("Primitive types are not supported.")
   }
 
   def fieldIndexOnRowWithoutSchemaError(): Throwable = {
+    // TODO Use SparkUnsupportedOperationException instead of UnsupportedOperationException
     new UnsupportedOperationException("fieldIndex on a Row without schema is undefined.")
   }
 
   def valueIsNullError(index: Int): Throwable = {
+    // TODO Use SparkNullPointerException instead of NullPointerException
     new NullPointerException(s"Value at index $index is null")
   }
 
   def onlySupportDataSourcesProvidingFileFormatError(providingClass: String): Throwable = {
-    new SparkException(s"Only Data Sources providing FileFormat are supported: $providingClass")
+    new SparkException(errorClass = "DATASOURCE_ONLY_SUPPORT_FILE_FORMAT",
+      messageParameters = Array(providingClass), cause = null)
   }
 
   def failToSetOriginalPermissionBackError(
@@ -1560,53 +1569,50 @@ object QueryExecutionErrors {
   }
 
   def failToSetOriginalACLBackError(aclEntries: String, path: Path, e: Throwable): Throwable = {
-    new SecurityException(s"Failed to set original ACL $aclEntries back to " +
-      s"the created path: $path. Exception: ${e.getMessage}")
+    new SparkSecurityException(errorClass = "FAILED_SET_ORIGINAL_ACL_BACK",
+      Array(aclEntries, path.toString, e.getMessage))
   }
 
   def multiFailuresInStageMaterializationError(error: Throwable): Throwable = {
-    new SparkException("Multiple failures in stage materialization.", error)
+    new SparkException(errorClass = "MULTI_FAILURES_IN_STAGE_MATERIALIZATION",
+      messageParameters = Array.empty, cause = error)
   }
 
   def unrecognizedCompressionSchemaTypeIDError(typeId: Int): Throwable = {
+    // TODO Use SparkUnsupportedOperationException instead of UnsupportedOperationException
     new UnsupportedOperationException(s"Unrecognized compression scheme type ID: $typeId")
   }
 
   def getParentLoggerNotImplementedError(className: String): Throwable = {
-    new SQLFeatureNotSupportedException(s"$className.getParentLogger is not yet implemented.")
+    new SparkSQLFeatureNotSupportedException(errorClass = "UNSUPPORTED_GET_PARENT_LOGGER",
+      messageParameters = Array(className))
   }
 
   def cannotCreateParquetConverterForTypeError(t: DecimalType, parquetType: String): Throwable = {
-    new RuntimeException(
-      s"""
-         |Unable to create Parquet converter for ${t.typeName}
-         |whose Parquet type is $parquetType without decimal metadata. Please read this
-         |column/field as Spark BINARY type.
-       """.stripMargin.replaceAll("\n", " "))
+    new SparkRuntimeException(errorClass = "CANNOT_CREATE_PARQUET_CONVERTER",
+      Array(t.typeName, parquetType))
   }
 
   def cannotCreateParquetConverterForDecimalTypeError(
       t: DecimalType, parquetType: String): Throwable = {
-    new RuntimeException(
-      s"""
-         |Unable to create Parquet converter for decimal type ${t.json} whose Parquet type is
-         |$parquetType.  Parquet DECIMAL type can only be backed by INT32, INT64,
-         |FIXED_LEN_BYTE_ARRAY, or BINARY.
-       """.stripMargin.replaceAll("\n", " "))
+    new SparkRuntimeException(errorClass = "CANNOT_CREATE_PARQUET_CONVERTER",
+      Array(t.json, parquetType))
   }
 
   def cannotCreateParquetConverterForDataTypeError(
       t: DataType, parquetType: String): Throwable = {
-    new RuntimeException(s"Unable to create Parquet converter for data type ${t.json} " +
-      s"whose Parquet type is $parquetType")
+    new SparkRuntimeException(errorClass = "CANNOT_CREATE_PARQUET_CONVERTER_FOR_DATA_TYPE",
+      Array(t.json, parquetType))
   }
 
   def cannotAddMultiPartitionsOnNonatomicPartitionTableError(tableName: String): Throwable = {
+    // TODO Use SparkUnsupportedOperationException instead of UnsupportedOperationException
     new UnsupportedOperationException(
       s"Nonatomic partition table $tableName can not add multiple partitions.")
   }
 
   def userSpecifiedSchemaUnsupportedByDataSourceError(provider: TableProvider): Throwable = {
+    // TODO Use SparkUnsupportedOperationException instead of UnsupportedOperationException
     new UnsupportedOperationException(
       s"${provider.getClass.getSimpleName} source does not support user-specified schema.")
   }
