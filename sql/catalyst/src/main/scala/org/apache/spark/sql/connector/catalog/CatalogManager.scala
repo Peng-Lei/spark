@@ -47,7 +47,6 @@ class CatalogManager(
   private val catalogs = mutable.HashMap.empty[String, CatalogPlugin]
 
   def catalog(name: String): CatalogPlugin = synchronized {
-    validateName(name)
     if (name.equalsIgnoreCase(SESSION_CATALOG_NAME)) {
       v2SessionCatalog
     } else {
