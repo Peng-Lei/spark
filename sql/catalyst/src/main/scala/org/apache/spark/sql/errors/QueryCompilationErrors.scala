@@ -566,14 +566,9 @@ object QueryCompilationErrors {
     new AnalysisException(s"Database $db is not empty. One or more $details exist.")
   }
 
-  def invalidNameForTableOrDatabaseError(name: String): Throwable = {
-    new AnalysisException(s"`$name` is not a valid name for tables/databases. " +
+  def invalidNameForCatalogOrDatabaseOrTableError(name: String): Throwable = {
+    new AnalysisException(s"`$name` is not a valid name for catalogs/databases/tables. " +
       "Valid names only contain alphabet characters, numbers and _.")
-  }
-
-  def invalidNameForCatalogError(name: String): Throwable = {
-    new AnalysisException(s"`$name` is not a valid name for catalog. " +
-      "Valid names can not be empty string or only contain whitespaces.")
   }
 
   def cannotCreateDatabaseWithSameNameAsPreservedDatabaseError(database: String): Throwable = {

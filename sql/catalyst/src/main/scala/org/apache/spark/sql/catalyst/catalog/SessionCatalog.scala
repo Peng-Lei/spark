@@ -39,6 +39,7 @@ import org.apache.spark.sql.catalyst.expressions.{Alias, Expression, ExpressionI
 import org.apache.spark.sql.catalyst.parser.{CatalystSqlParser, ParserInterface}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project, SubqueryAlias, View}
 import org.apache.spark.sql.catalyst.util.{CharVarcharUtils, StringUtils}
+import org.apache.spark.sql.catalyst.util.SessionCatalogUtils.validateName
 import org.apache.spark.sql.connector.catalog.CatalogManager
 import org.apache.spark.sql.errors.QueryCompilationErrors
 import org.apache.spark.sql.internal.SQLConf
@@ -128,21 +129,6 @@ class SessionCatalog(
   // the corresponding item in the current database.
   @GuardedBy("this")
   protected var currentDb: String = formatDatabaseName(DEFAULT_DATABASE)
-
-  private val validNameFormat = "([\\w_]+)".r
-
-  /**
-   * Checks if the given name conforms the Hive standard ("[a-zA-Z_0-9]+"),
-   * i.e. if this name only contains characters, numbers, and _.
-   *
-   * This method is intended to have the same behavior of
-   * org.apache.hadoop.hive.metastore.MetaStoreUtils.validateName.
-   */
-  private def validateName(name: String): Unit = {
-    if (!validNameFormat.pattern.matcher(name).matches()) {
-      throw QueryCompilationErrors.invalidNameForTableOrDatabaseError(name)
-    }
-  }
 
   /**
    * Format table name, taking into account case sensitivity.

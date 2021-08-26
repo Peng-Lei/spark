@@ -2916,13 +2916,13 @@ class DataSourceV2SQLSuite
     }
   }
 
-  test("SPARK-36133: basic check for the catalog name") {
-    Seq("", " ", "    ").foreach { name => {
+  test("SPARK-36133: the catalog name keep consistent with the namespace naming rule") {
+    Seq("", " ", ".", "a.b", "/", " ab", "a b", "(", "()", "{", "{}", "[", "[]").foreach { name => {
       spark.conf.set(s"spark.sql.catalog.$name", classOf[InMemoryCatalog].getName)
       assertAnalysisError(
         s"use `$name`",
-        s"`$name` is not a valid name for catalog.")
-      }
+        s"`$name` is not a valid name")
+    }
     }
   }
 
