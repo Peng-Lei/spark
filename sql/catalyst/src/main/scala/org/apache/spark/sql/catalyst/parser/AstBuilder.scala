@@ -3566,6 +3566,14 @@ class AstBuilder extends SqlBaseBaseVisitor[AnyRef] with SQLConfHelper with Logg
   }
 
   /**
+   * Create a [[SetCatalogStatement]] logical plan.
+   */
+  override def visitSetCatalog(ctx: SetCatalogContext): LogicalPlan = withOrigin(ctx) {
+    val nameParts = visitMultipartIdentifier(ctx.multipartIdentifier)
+    SetCatalogStatement(Option(nameParts.mkString(".")))
+  }
+
+  /**
    * Create a [[ShowCurrentNamespaceStatement]].
    */
   override def visitShowCurrentNamespace(

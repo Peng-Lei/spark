@@ -107,6 +107,7 @@ statement
     : query                                                            #statementDefault
     | ctes? dmlStatementNoWith                                         #dmlStatement
     | USE NAMESPACE? multipartIdentifier                               #use
+    | SET CATALOG multipartIdentifier                                  #setCatalog
     | CREATE namespace (IF NOT EXISTS)? multipartIdentifier
         (commentSpec |
          locationSpec |
@@ -1061,6 +1062,7 @@ ansiNonReserved
     | BY
     | CACHE
     | CASCADE
+    | CATALOG
     | CHANGE
     | CLEAR
     | CLUSTER
@@ -1290,6 +1292,7 @@ nonReserved
     | CASCADE
     | CASE
     | CAST
+    | CATALOG
     | CHANGE
     | CHECK
     | CLEAR
@@ -1544,6 +1547,7 @@ CACHE: 'CACHE';
 CASCADE: 'CASCADE';
 CASE: 'CASE';
 CAST: 'CAST';
+CATALOG: 'CATALOG';
 CHANGE: 'CHANGE';
 CHECK: 'CHECK';
 CLEAR: 'CLEAR';

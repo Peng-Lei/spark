@@ -89,6 +89,9 @@ class ResolveCatalogs(val catalogManager: CatalogManager)
         SetCatalogAndNamespace(catalogManager, Some(catalog.name()), namespace)
       }
 
+    case SetCatalogStatement(nameParts) =>
+      SetCatalogAndNamespace(catalogManager, nameParts, None)
+
     case ShowCurrentNamespaceStatement() =>
       ShowCurrentNamespace(catalogManager)
   }

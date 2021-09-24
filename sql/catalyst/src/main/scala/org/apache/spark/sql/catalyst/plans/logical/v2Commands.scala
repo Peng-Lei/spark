@@ -622,6 +622,7 @@ object ShowViews {
 
 /**
  * The logical plan of the USE/USE NAMESPACE command.
+ * It also for SET CATALOG command
  */
 case class SetCatalogAndNamespace(
     catalogManager: CatalogManager,
