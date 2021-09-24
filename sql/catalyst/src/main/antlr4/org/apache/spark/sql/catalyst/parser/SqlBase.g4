@@ -107,6 +107,7 @@ statement
     : query                                                            #statementDefault
     | ctes? dmlStatementNoWith                                         #dmlStatement
     | USE NAMESPACE? multipartIdentifier                               #use
+    | SET CATALOG catalogIdentifier                                    #setCatalog
     | CREATE namespace (IF NOT EXISTS)? multipartIdentifier
         (commentSpec |
          locationSpec |
@@ -1034,6 +1035,12 @@ alterColumnAction
     | setOrDrop=(SET | DROP) NOT NULL
     ;
 
+catalogIdentifier
+    : identifier
+    | STRING
+    ;
+
+
 // When `SQL_standard_keyword_behavior=true`, there are 2 kinds of keywords in Spark SQL.
 // - Reserved keywords:
 //     Keywords that are reserved and can't be used as identifiers for table, view, column,
@@ -1061,6 +1068,7 @@ ansiNonReserved
     | BY
     | CACHE
     | CASCADE
+    | CATALOG
     | CHANGE
     | CLEAR
     | CLUSTER
@@ -1290,6 +1298,7 @@ nonReserved
     | CASCADE
     | CASE
     | CAST
+    | CATALOG
     | CHANGE
     | CHECK
     | CLEAR
@@ -1544,6 +1553,7 @@ CACHE: 'CACHE';
 CASCADE: 'CASCADE';
 CASE: 'CASE';
 CAST: 'CAST';
+CATALOG: 'CATALOG';
 CHANGE: 'CHANGE';
 CHECK: 'CHECK';
 CLEAR: 'CLEAR';

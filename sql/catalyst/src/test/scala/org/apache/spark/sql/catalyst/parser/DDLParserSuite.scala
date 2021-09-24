@@ -2573,4 +2573,9 @@ class DDLParserSuite extends AnalysisTest {
     comparePlans(parsePlan(timestampTypeSql), insertPartitionPlan(timestamp))
     comparePlans(parsePlan(binaryTypeSql), insertPartitionPlan(binaryStr))
   }
+  test("SET CATALOG ") {
+    comparePlans(
+      parsePlan("SET CATALOG 'a'"),
+      SetCatalogStatement(Option("a")))
+  }
 }

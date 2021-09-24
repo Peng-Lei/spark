@@ -279,6 +279,11 @@ case class InsertIntoStatement(
 case class UseStatement(isNamespaceSet: Boolean, nameParts: Seq[String]) extends LeafParsedStatement
 
 /**
+ * A SetCatalog statement, as parsed from SQL.
+ */
+case class SetCatalogStatement(nameParts: Option[String]) extends LeafParsedStatement
+
+/**
  *  CREATE FUNCTION statement, as parsed from SQL
  */
 case class CreateFunctionStatement(
