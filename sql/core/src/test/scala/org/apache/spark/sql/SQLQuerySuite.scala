@@ -4223,6 +4223,17 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
     checkAnswer(sql("""SELECT from_json(r'{"a": "\\"}', 'a string')"""), Row(Row("\\")))
     checkAnswer(sql("""SELECT from_json(R'{"a": "\\"}', 'a string')"""), Row(Row("\\")))
   }
+
+  test("SPARK-36851: Incorrect parsing of negative ANSI typed interval literals") {
+    val df1 = sql("select interval -'1' year")
+    checkAnswer(df1, Row(Period.of(-1, 0, 0)))
+
+    val df2 = sql("select interval -'-1' year")
+    checkAnswer(df1, Row(Period.of(1, 0, 0)))
+
+    val df3 = sql("select interval -'-1-1' year to month")
+    checkAnswer(df1, Row(Period.of(1, 1, 0)))
+  }
 }
 
 case class Foo(bar: Option[String])
