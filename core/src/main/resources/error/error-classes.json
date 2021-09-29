@@ -33,16 +33,10 @@
     "sqlState" : "42000"
   },
   "CANNOT_READ_CURRENT_FILE" : {
-    "message" : [ "%s \n It is possible the underlying files have been updated. You can explicitly invalidate the cache in Spark by running 'REFRESH TABLE tableName' command in SQL or by recreating the Dataset/DataFrame involved." ]
+    "message" : [ "%s", "It is possible the underlying files have been updated. You can explicitly invalidate the cache in Spark by running 'REFRESH TABLE tableName' command in SQL or by recreating the Dataset/DataFrame involved." ]
   },
   "CANNOT_TERMINATE_GENERATOR" : {
     "message" : [ "Cannot terminate expression: %s" ]
-  },
-  "CANNOT_UPGRADE_IN_READING_DATES" : {
-    "message" : [ "You may get a different result due to the upgrading of Spark %s reading dates before 1582-10-15 or timestamps before 1900-01-01T00:00:00Z from %s files can be ambiguous, as the files may be written by Spark 2.x or legacy versions of Hive, which uses a legacy hybrid calendar that is different from Spark 3.0+'s Proleptic Gregorian calendar. See more details in SPARK-31404. You can set the SQL config '%s' or the datasource option '%s' to 'LEGACY' to rebase the datetime values w.r.t. the calendar difference during reading. To read the datetime values as it is, set the SQL config '%s' or the datasource option '%s' to 'CORRECTED'." ]
-  },
-  "CANNOT_UPGRADE_IN_WRITING_DATES" : {
-    "message" : [ "You may get a different result due to the upgrading of Spark %s writing dates before 1582-10-15 or timestamps before 1900-01-01T00:00:00Z into %s files can be dangerous, as the files may be read by Spark 2.x or legacy versions of Hive later, which uses a legacy hybrid calendar that is different from Spark 3.0+'s Proleptic Gregorian calendar. See more details in SPARK-31404. You can set %s to 'LEGACY' to rebase the datetime values w.r.t. the calendar difference during writing, to get maximum interoperability. Or set %s to 'CORRECTED' to write the datetime values as it is, if you are 100%% sure that the written files will only be read by Spark 3.0+ or other systems that use Proleptic Gregorian calendar." ]
   },
   "CAST_CAUSES_OVERFLOW" : {
     "message" : [ "Casting %s to %s causes overflow" ],
@@ -70,19 +64,20 @@
     "message" : [ "Failed to execute user defined function (%s: (%s) => %s)" ]
   },
   "FAILED_FALLBACK_V1_BECAUSE_OF_INCONSISTENT_SCHEMA" : {
-    "message" : [ "The fallback v1 relation reports inconsistent schema:\n Schema of v2 scan:     %s\nSchema of v1 relation: %s" ]
+    "message" : [ "The fallback v1 relation reports inconsistent schema:", "Schema of v2 scan:     %s", "Schema of v1 relation: %s" ],
+    "sqlState" : "22023"
   },
-  "FAILED_FIND_DATASOURCE" : {
+  "FAILED_FIND_DATA_SOURCE" : {
     "message" : [ "Failed to find data source: %s. Please find packages at http://spark.apache.org/third-party-projects.html" ]
   },
-  "FAILED_FORMAT_DATETIME_IN_NEW_FORMATTER" : {
-    "message" : [ "You may get a different result due to the upgrading of Spark %s: Fail to format it to '%s' in the new formatter. You can set %s to LEGACY to restore the behavior before Spark 3.0, or set to CORRECTED and treat it as an invalid datetime string." ]
+  "FAILED_FORMAT_DATETIME_AFTER_UPGRADE" : {
+    "message" : [ "Fail to format it to '%s' in the new formatter. You can set %s to LEGACY to restore the behavior before Spark 3.0, or set to CORRECTED and treat it as an invalid datetime string." ]
   },
-  "FAILED_PARSE_DATETIME_IN_NEW_PARSER" : {
-    "message" : [ "You may get a different result due to the upgrading of Spark %s: Fail to parse '%s' in the new parser. You can set %s to LEGACY to restore the behavior before Spark 3.0, or set to CORRECTED and treat it as an invalid datetime string." ]
+  "FAILED_PARSE_DATETIME_AFTER_UPGRADE" : {
+    "message" : [ "Fail to parse '%s' in the new parser. You can set %s to LEGACY to restore the behavior before Spark 3.0, or set to CORRECTED and treat it as an invalid datetime string." ]
   },
   "FAILED_RECOGNIZE_PATTERN_AFTER_UPGRADE" : {
-    "message" : [ "You may get a different result due to the upgrading of Spark %s: Fail to recognize '%s' pattern in the DateTimeFormatter. 1) You can set %s to LEGACY to restore the behavior before Spark 3.0. 2) You can form a valid datetime pattern with the guide from https://spark.apache.org/docs/latest/sql-ref-datetime-pattern.html" ]
+    "message" : [ "Fail to recognize '%s' pattern in the DateTimeFormatter. 1) You can set %s to LEGACY to restore the behavior before Spark 3.0. 2) You can form a valid datetime pattern with the guide from https://spark.apache.org/docs/latest/sql-ref-datetime-pattern.html" ]
   },
   "FAILED_RENAME_PATH" : {
     "message" : [ "Failed to rename %s to %s as destination already exists" ],
@@ -156,7 +151,7 @@
   },
   "MISSING_STREAMING_SOURCE_SCHEMA" : {
     "message" : [ "Schema must be specified when creating a streaming source DataFrame. If some files already exist in the directory, then depending on the file format you may be able to create a static DataFrame on that directory with 'spark.read.load(directory)' and infer schema from it." ],
-    "sqlState" : "3F000"
+    "sqlState" : "22023"
   },
   "NON_LITERAL_PIVOT_VALUES" : {
     "message" : [ "Literal expressions required for pivot values, found '%s'" ],
@@ -169,6 +164,9 @@
   "PIVOT_VALUE_DATA_TYPE_MISMATCH" : {
     "message" : [ "Invalid pivot value '%s': value data type %s does not match pivot column data type %s" ],
     "sqlState" : "42000"
+  },
+  "READING_AMBIGUOUS_DATES_AFTER_UPGRADE" : {
+    "message" : [ "reading dates before 1582-10-15 or timestamps before 1900-01-01T00:00:00Z from %s files can be ambiguous, as the files may be written by Spark 2.x or legacy versions of Hive, which uses a legacy hybrid calendar that is different from Spark 3.0+'s Proleptic Gregorian calendar. See more details in SPARK-31404. You can set the SQL config '%s' or the datasource option '%s' to 'LEGACY' to rebase the datetime values w.r.t. the calendar difference during reading. To read the datetime values as it is, set the SQL config '%s' or the datasource option '%s' to 'CORRECTED'." ]
   },
   "RENAME_SRC_PATH_NOT_FOUND" : {
     "message" : [ "Failed to rename as %s was not found" ],
@@ -223,13 +221,16 @@
   "UNSUPPORTED_SIMPLE_STRING_WITH_NODE_ID" : {
     "message" : [ "%s does not implement simpleStringWithNodeId" ]
   },
-  "UNSUPPORTED_STREAMED_OPERATOR_BY_DATASOURCE" : {
+  "UNSUPPORTED_STREAMED_OPERATOR_BY_DATA_SOURCE" : {
     "message" : [ "Data source %s does not support streamed %s" ],
     "sqlState" : "0A000"
   },
   "UNSUPPORTED_TRANSACTION_BY_JDBC_SERVER" : {
     "message" : [ "The target JDBC server does not support transaction and can only support ALTER TABLE with a single action." ],
     "sqlState" : "0A000"
+  },
+  "WRITING_AMBIGUOUS_DATES_AFTER_UPGRADE" : {
+    "message" : [ "writing dates before 1582-10-15 or timestamps before 1900-01-01T00:00:00Z into %s files can be dangerous, as the files may be read by Spark 2.x or legacy versions of Hive later, which uses a legacy hybrid calendar that is different from Spark 3.0+'s Proleptic Gregorian calendar. See more details in SPARK-31404. You can set %s to 'LEGACY' to rebase the datetime values w.r.t. the calendar difference during writing, to get maximum interoperability. Or set %s to 'CORRECTED' to write the datetime values as it is, if you are 100%% sure that the written files will only be read by Spark 3.0+ or other systems that use Proleptic Gregorian calendar." ]
   },
   "WRITING_JOB_ABORTED" : {
     "message" : [ "Writing job aborted" ],
