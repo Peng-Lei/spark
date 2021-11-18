@@ -42,4 +42,15 @@ trait TestsV1AndV2Commands extends DDLCommandTestUtils {
       }
     }
   }
+
+  // Tests using V1 catalogs will run with `spark.sql.legacy.useV1Command` on to test V1 commands.
+  def testV1(testName: String, testTags: Tag*)(testFun: => Any)
+    (implicit pos: Position): Unit = {
+      _version = "V1"
+      super.test(testName, testTags: _*) {
+        withSQLConf(SQLConf.LEGACY_USE_V1_COMMAND.key -> "true") {
+          testFun
+        }
+      }
+  }
 }

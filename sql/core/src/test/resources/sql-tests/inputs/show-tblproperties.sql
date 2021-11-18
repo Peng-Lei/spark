@@ -8,6 +8,8 @@ SHOW TBLPROPERTIES tbl("p3");
 
 DROP TABLE tbl;
 
+SET spark.sql.legacy.useV1Command=true
+
 -- create a view with properties
 CREATE VIEW view TBLPROPERTIES('p1'='v1', 'p2'='v2') AS SELECT 1 AS c1;
 
