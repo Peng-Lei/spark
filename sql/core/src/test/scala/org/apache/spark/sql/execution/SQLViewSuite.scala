@@ -903,4 +903,88 @@ abstract class SQLViewSuite extends QueryTest with SQLTestUtils {
       }
     }
   }
+
+  test("temp view") {
+    val viewName = "spark_28383"
+    withTempView(viewName) {
+      sql(s"CREATE TEMPORARY VIEW $viewName AS SELECT 1 AS a")
+      val ex = intercept[AnalysisException] {
+        sql(s"SHOW CREATE TABLE $viewName")
+      }
+      assert(ex.getMessage.contains(
+        s"$viewName is a temp view. 'SHOW CREATE TABLE' expects a table or permanent view."))
+    }
+
+    withGlobalTempView(viewName) {
+      sql(s"CREATE GLOBAL TEMPORARY VIEW $viewName AS SELECT 1 AS a")
+      val globalTempViewDb = spark.sessionState.catalog.globalTempViewManager.database
+      val ex = intercept[AnalysisException] {
+        sql(s"SHOW CREATE TABLE $globalTempViewDb.$viewName")
+      }
+      assert(ex.getMessage.contains(
+        s"$globalTempViewDb.$viewName is a temp view. " +
+          "'SHOW CREATE TABLE' expects a table or permanent view."))
+    }
+  }
+
+  test("view") {
+    Seq(true, false).foreach { serde =>
+      withView("v1") {
+        sql("CREATE VIEW v1 AS SELECT 1 AS a")
+        val showDDL = getShowCreateDDL("default.v1", serde)
+        assert(showDDL(0) == "CREATE VIEW `default`.`v1` (")
+        assert(showDDL(1) == "`a`)")
+        assert(showDDL.last == "AS SELECT 1 AS a")
+      }
+    }
+  }
+
+  test("view with output columns") {
+    Seq(true, false).foreach { serde =>
+      withView("v1") {
+        sql("CREATE VIEW v1 (a, b COMMENT 'b column') AS SELECT 1 AS a, 2 AS b")
+        val showDDL = getShowCreateDDL("default.v1", serde)
+        assert(showDDL(0) == "CREATE VIEW `default`.`v1` (")
+        assert(showDDL(1) == "`a`,")
+        assert(showDDL(2) == "`b` COMMENT 'b column')")
+        assert(showDDL.last == "AS SELECT 1 AS a, 2 AS b")
+      }
+    }
+  }
+
+  test("view with table comment and properties") {
+    Seq(true, false).foreach { serde =>
+      withView("v1") {
+        sql(
+          s"""
+             |CREATE VIEW v1 (
+             |  c1 COMMENT 'bla',
+             |  c2
+             |)
+             |COMMENT 'table comment'
+             |TBLPROPERTIES (
+             |  'prop1' = 'value1',
+             |  'prop2' = 'value2'
+             |)
+             |AS SELECT 1 AS c1, '2' AS c2
+         """.stripMargin
+        )
+        val expected = "CREATE VIEW `default`.`v1` ( `c1` COMMENT 'bla', `c2`)" +
+          " COMMENT 'table comment'" +
+          " TBLPROPERTIES ( 'prop1' = 'value1', 'prop2' = 'value2')" +
+          " AS SELECT 1 AS c1, '2' AS c2"
+        assert(getShowCreateDDL("default.v1", serde).mkString(" ") == expected)
+      }
+    }
+  }
+
+  def getShowCreateDDL(view: String, serde: Boolean = false): Array[String] = {
+    val result = if (serde) {
+      sql(s"SHOW CREATE TABLE $view AS SERDE")
+    } else {
+      sql(s"SHOW CREATE TABLE $view")
+    }
+    result.head().getString(0).split("\n").map(_.trim)
+      .filter(!_.startsWith("'transient_lastDdlTime'"))
+  }
 }
