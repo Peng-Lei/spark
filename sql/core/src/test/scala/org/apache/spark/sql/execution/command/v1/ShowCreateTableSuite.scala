@@ -15,46 +15,46 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql
+package org.apache.spark.sql.execution.command.v1
 
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
-import org.apache.spark.sql.sources.SimpleInsertSource
-import org.apache.spark.sql.test.{SharedSparkSession, SQLTestUtils}
-import org.apache.spark.util.Utils
+import org.apache.spark.sql.execution.command
 
-class SimpleShowCreateTableSuite extends ShowCreateTableSuite with SharedSparkSession
+/**
+ * This base suite contains unified tests for the `SHOW CREATE TABLE` command that checks V1
+ * table catalogs. The tests that cannot run for all V1 catalogs are located in more
+ * specific test suites:
+ *
+ *   - V1 In-Memory catalog: `org.apache.spark.sql.execution.command.v1.ShowCreateTableSuite`
+ *   - V1 Hive External catalog:
+ *     `org.apache.spark.sql.hive.execution.command.ShowCreateTableSuite`
+ */
+trait ShowCreateTableSuiteBase extends command.ShowCreateTableSuiteBase
+    with command.TestsV1AndV2Commands {
 
-abstract class ShowCreateTableSuite extends QueryTest with SQLTestUtils {
-  import testImplicits._
-
-  test("data source table with user specified schema") {
-    withTable("ddl_test") {
-      val jsonFilePath = Utils.getSparkClassLoader.getResource("sample.json").getFile
-
-      sql(
-        s"""CREATE TABLE ddl_test (
-           |  a STRING,
-           |  b STRING,
-           |  `extra col` ARRAY<INT>,
-           |  `<another>` STRUCT<x: INT, y: ARRAY<BOOLEAN>>
-           |)
-           |USING json
-           |OPTIONS (
-           | PATH '$jsonFilePath'
-           |)
-         """.stripMargin
-      )
-
-      checkCreateTable("ddl_test")
-    }
-  }
+//  test("CATS") {
+//    val table = "ddl_test"
+//    withTable(table) {
+//      sql(
+//        s"""CREATE TABLE $table
+//           |$defaultUsing
+//           |PARTITIONED BY (c)
+//           |CLUSTERED BY (a) SORTED BY (b) INTO 2 BUCKETS
+//           |COMMENT 'This is a comment'
+//           |TBLPROPERTIES ('a' = '1')
+//           |AS SELECT 1 AS a, "foo" AS b, 2.5 AS c
+//         """.stripMargin
+//      )
+//      checkCreateTable(table)
+//    }
+//  }
 
   test("data source table CTAS") {
     withTable("ddl_test") {
       sql(
         s"""CREATE TABLE ddl_test
-           |USING json
+           |$defaultUsing
            |AS SELECT 1 AS a, "foo" AS b
          """.stripMargin
       )
@@ -67,7 +67,7 @@ abstract class ShowCreateTableSuite extends QueryTest with SQLTestUtils {
     withTable("ddl_test") {
       sql(
         s"""CREATE TABLE ddl_test
-           |USING json
+           |$defaultUsing
            |PARTITIONED BY (b)
            |AS SELECT 1 AS a, "foo" AS b
          """.stripMargin
@@ -81,7 +81,7 @@ abstract class ShowCreateTableSuite extends QueryTest with SQLTestUtils {
     withTable("ddl_test") {
       sql(
         s"""CREATE TABLE ddl_test
-           |USING json
+           |$defaultUsing
            |CLUSTERED BY (a) SORTED BY (b) INTO 2 BUCKETS
            |AS SELECT 1 AS a, "foo" AS b
          """.stripMargin
@@ -95,7 +95,7 @@ abstract class ShowCreateTableSuite extends QueryTest with SQLTestUtils {
     withTable("ddl_test") {
       sql(
         s"""CREATE TABLE ddl_test
-           |USING json
+           |$defaultUsing
            |PARTITIONED BY (c)
            |CLUSTERED BY (a) SORTED BY (b) INTO 2 BUCKETS
            |AS SELECT 1 AS a, "foo" AS b, 2.5 AS c
@@ -110,7 +110,7 @@ abstract class ShowCreateTableSuite extends QueryTest with SQLTestUtils {
     withTable("ddl_test") {
       sql(
         s"""CREATE TABLE ddl_test
-           |USING json
+           |$defaultUsing
            |COMMENT 'This is a comment'
            |AS SELECT 1 AS a, "foo" AS b, 2.5 AS c
          """.stripMargin
@@ -134,76 +134,6 @@ abstract class ShowCreateTableSuite extends QueryTest with SQLTestUtils {
     }
   }
 
-  test("data source table using Dataset API") {
-    withTable("ddl_test") {
-      spark
-        .range(3)
-        .select('id as 'a, 'id as 'b, 'id as 'c, 'id as 'd, 'id as 'e)
-        .write
-        .mode("overwrite")
-        .partitionBy("a", "b")
-        .bucketBy(2, "c", "d")
-        .saveAsTable("ddl_test")
-
-      checkCreateTable("ddl_test")
-    }
-  }
-
-  test("temp view") {
-    val viewName = "spark_28383"
-    withTempView(viewName) {
-      sql(s"CREATE TEMPORARY VIEW $viewName AS SELECT 1 AS a")
-      val ex = intercept[AnalysisException] {
-        sql(s"SHOW CREATE TABLE $viewName")
-      }
-      assert(ex.getMessage.contains(
-        s"$viewName is a temp view. 'SHOW CREATE TABLE' expects a table or permanent view."))
-    }
-
-    withGlobalTempView(viewName) {
-      sql(s"CREATE GLOBAL TEMPORARY VIEW $viewName AS SELECT 1 AS a")
-      val globalTempViewDb = spark.sessionState.catalog.globalTempViewManager.database
-      val ex = intercept[AnalysisException] {
-        sql(s"SHOW CREATE TABLE $globalTempViewDb.$viewName")
-      }
-      assert(ex.getMessage.contains(
-        s"$globalTempViewDb.$viewName is a temp view. " +
-          "'SHOW CREATE TABLE' expects a table or permanent view."))
-    }
-  }
-
-  test("SPARK-24911: keep quotes for nested fields") {
-    withTable("t1") {
-      val createTable = "CREATE TABLE `t1` (`a` STRUCT<`b`: STRING>)"
-      sql(s"$createTable USING json")
-      val shownDDL = getShowDDL("SHOW CREATE TABLE t1")
-      assert(shownDDL == "CREATE TABLE `default`.`t1` ( `a` STRUCT<`b`: STRING>) USING json")
-
-      checkCreateTable("t1")
-    }
-  }
-
-  test("SPARK-36012: Add NULL flag when SHOW CREATE TABLE") {
-    val t = "SPARK_36012"
-    withTable(t) {
-      sql(
-        s"""
-           |CREATE TABLE $t (
-           |  a bigint NOT NULL,
-           |  b bigint
-           |)
-           |USING ${classOf[SimpleInsertSource].getName}
-        """.stripMargin)
-      val showDDL = getShowDDL(s"SHOW CREATE TABLE $t")
-      assert(showDDL == s"CREATE TABLE `default`.`$t` ( `a` BIGINT NOT NULL," +
-        s" `b` BIGINT) USING ${classOf[SimpleInsertSource].getName}")
-    }
-  }
-
-  protected def getShowDDL(showCreateTableSql: String): String = {
-    sql(showCreateTableSql).head().getString(0).split("\n").map(_.trim).mkString(" ")
-  }
-
   protected def checkCreateTable(table: String, serde: Boolean = false): Unit = {
     checkCreateTableOrView(TableIdentifier(table, Some("default")), "TABLE", serde)
   }
@@ -223,9 +153,7 @@ abstract class ShowCreateTableSuite extends QueryTest with SQLTestUtils {
     } else {
       sql(s"SHOW CREATE TABLE ${table.quotedString}").head().getString(0)
     }
-
     sql(s"DROP $checkType ${table.quotedString}")
-
     try {
       sql(shownDDL)
       val actual = spark.sharedState.externalCatalog.getTable(db, table.table)
@@ -237,5 +165,60 @@ abstract class ShowCreateTableSuite extends QueryTest with SQLTestUtils {
 
   protected def checkCatalogTables(expected: CatalogTable, actual: CatalogTable): Unit = {
     assert(CatalogTable.normalize(actual) == CatalogTable.normalize(expected))
+  }
+}
+
+/**
+ * The class contains tests for the `SHOW CREATE TABLE` command to check V1 In-Memory
+ * table catalog.
+ */
+class ShowCreateTableSuite extends ShowCreateTableSuiteBase with CommandSuiteBase {
+  override def commandVersion: String = super[ShowCreateTableSuiteBase].commandVersion
+
+  test("SHOW CREATE TABLE") {
+    val t = "tbl"
+    withTable(t) {
+      sql(
+        s"""
+           |CREATE TABLE $t (
+           |  a bigint NOT NULL,
+           |  b bigint,
+           |  c bigint,
+           |  `extraCol` ARRAY<INT>,
+           |  `<another>` STRUCT<x: INT, y: ARRAY<BOOLEAN>>
+           |)
+           |$defaultUsing
+           |OPTIONS (
+           |  from = 0,
+           |  to = 1,
+           |  via = 2)
+           |COMMENT 'This is a comment'
+           |TBLPROPERTIES ('prop1' = '1', 'prop2' = '2', 'prop3' = 3, 'prop4' = 4)
+           |PARTITIONED BY (a)
+           |LOCATION '/tmp'
+        """.stripMargin)
+      val showDDL = getShowCreateDDL(s"SHOW CREATE TABLE $t")
+      assert(showDDL === Array(
+        s"CREATE TABLE `default`.`$t` (",
+        "`b` BIGINT,",
+        "`c` BIGINT,",
+        "`extraCol` ARRAY<INT>,",
+        "`<another>` STRUCT<`x`: INT, `y`: ARRAY<BOOLEAN>>,",
+        "`a` BIGINT NOT NULL)",
+        defaultUsing,
+        "OPTIONS (",
+        "`from` '0',",
+        "`to` '1',",
+        "`via` '2')",
+        "PARTITIONED BY (a)",
+        "COMMENT 'This is a comment'",
+        "LOCATION 'file:/tmp'",
+        "TBLPROPERTIES (",
+        "'prop1' = '1',",
+        "'prop2' = '2',",
+        "'prop3' = '3',",
+        "'prop4' = '4')"
+      ))
+    }
   }
 }

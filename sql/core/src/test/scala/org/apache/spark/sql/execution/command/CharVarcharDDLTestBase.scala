@@ -140,6 +140,15 @@ trait CharVarcharDDLTestBase extends QueryTest with SQLTestUtils {
     }
   }
 
+  test("SPARK-33892: SHOW CREATE TABLE w/ char/varchar") {
+    withTable("t") {
+      sql(s"CREATE TABLE t(v VARCHAR(3), c CHAR(5)) USING $format")
+      val rest = sql("SHOW CREATE TABLE t").head().getString(0)
+      assert(rest.contains("VARCHAR(3)"))
+      assert(rest.contains("CHAR(5)"))
+    }
+  }
+
   test("SPARK-37160: ALTER TABLE ADD COLUMN with CHAR_AS_VARCHAR") {
     withTable("t") {
       sql(s"CREATE TABLE t(col CHAR(5)) USING $format")

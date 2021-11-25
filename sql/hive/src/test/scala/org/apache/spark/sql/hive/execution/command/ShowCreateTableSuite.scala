@@ -15,51 +15,23 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.hive
+package org.apache.spark.sql.hive.execution.command
 
-import org.apache.spark.sql.{AnalysisException, ShowCreateTableSuite}
+import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
-import org.apache.spark.sql.hive.test.TestHiveSingleton
-import org.apache.spark.sql.internal.{HiveSerDe, SQLConf}
+import org.apache.spark.sql.execution.command.v1
+import org.apache.spark.sql.hive.HiveExternalCatalog
+import org.apache.spark.sql.internal.HiveSerDe
 
-class HiveShowCreateTableSuite extends ShowCreateTableSuite with TestHiveSingleton {
+/**
+ * The class contains tests for the `SHOW CREATE TABLE` command to check V1 Hive external
+ * table catalog.
+ */
+class ShowCreateTableSuite extends v1.ShowCreateTableSuiteBase with CommandSuiteBase {
+  override def commandVersion: String = super[ShowCreateTableSuiteBase].commandVersion
 
-  private var origCreateHiveTableConfig = false
-
-  protected override def beforeAll(): Unit = {
-    super.beforeAll()
-    origCreateHiveTableConfig =
-      spark.conf.get(SQLConf.LEGACY_CREATE_HIVE_TABLE_BY_DEFAULT)
-    spark.conf.set(SQLConf.LEGACY_CREATE_HIVE_TABLE_BY_DEFAULT.key, true)
-  }
-
-  protected override def afterAll(): Unit = {
-    spark.conf.set(
-      SQLConf.LEGACY_CREATE_HIVE_TABLE_BY_DEFAULT.key,
-      origCreateHiveTableConfig)
-    super.afterAll()
-  }
-
-  test("view") {
-    Seq(true, false).foreach { serde =>
-      withView("v1") {
-        sql("CREATE VIEW v1 AS SELECT 1 AS a")
-        checkCreateView("v1", serde)
-      }
-    }
-  }
-
-  test("view with output columns") {
-    Seq(true, false).foreach { serde =>
-      withView("v1") {
-        sql("CREATE VIEW v1 (a, b COMMENT 'b column') AS SELECT 1 AS a, 2 AS b")
-        checkCreateView("v1", serde)
-      }
-    }
-  }
-
-  test("view with table comment and properties") {
+  test("PERSISTED VIEW") {
     Seq(true, false).foreach { serde =>
       withView("v1") {
         sql(
@@ -76,27 +48,8 @@ class HiveShowCreateTableSuite extends ShowCreateTableSuite with TestHiveSinglet
              |AS SELECT 1 AS c1, '2' AS c2
          """.stripMargin
         )
-
         checkCreateView("v1", serde)
       }
-    }
-  }
-
-  test("simple hive table") {
-    withTable("t1") {
-      sql(
-        s"""CREATE TABLE t1 (
-           |  c1 INT COMMENT 'bla',
-           |  c2 STRING
-           |)
-           |TBLPROPERTIES (
-           |  'prop1' = 'value1',
-           |  'prop2' = 'value2'
-           |)
-         """.stripMargin
-      )
-
-      checkCreateTable("t1", serde = true)
     }
   }
 
@@ -115,7 +68,6 @@ class HiveShowCreateTableSuite extends ShowCreateTableSuite with TestHiveSinglet
              |)
            """.stripMargin
         )
-
         checkCreateTable("t1", serde = true)
       }
     }
@@ -135,7 +87,6 @@ class HiveShowCreateTableSuite extends ShowCreateTableSuite with TestHiveSinglet
            |)
          """.stripMargin
       )
-
       checkCreateTable("t1", serde = true)
     }
   }
@@ -153,7 +104,6 @@ class HiveShowCreateTableSuite extends ShowCreateTableSuite with TestHiveSinglet
            |NULL DEFINED AS 'NaN'
          """.stripMargin
       )
-
       checkCreateTable("t1", serde = true)
     }
   }
@@ -240,83 +190,6 @@ class HiveShowCreateTableSuite extends ShowCreateTableSuite with TestHiveSinglet
         assert(causeForSpark.getMessage.contains(" - partitioned view"))
       }
     }
-  }
-
-  test("SPARK-24911: keep quotes for nested fields in hive") {
-    withTable("t1") {
-      val createTable = "CREATE TABLE `t1` (`a` STRUCT<`b`: STRING>) USING hive"
-      sql(createTable)
-      val shownDDL = getShowDDL("SHOW CREATE TABLE t1")
-      assert(shownDDL.substring(0, shownDDL.indexOf(" USING")) ==
-        "CREATE TABLE `default`.`t1` ( `a` STRUCT<`b`: STRING>)")
-
-      checkCreateTable("t1", serde = true)
-    }
-  }
-
-  private def createRawHiveTable(ddl: String): Unit = {
-    hiveContext.sharedState.externalCatalog.unwrapped.asInstanceOf[HiveExternalCatalog]
-      .client.runSqlHive(ddl)
-  }
-
-  private def checkCreateSparkTableAsHive(tableName: String): Unit = {
-    val table = TableIdentifier(tableName, Some("default"))
-    val db = table.database.get
-    val hiveTable = spark.sharedState.externalCatalog.getTable(db, table.table)
-    val sparkDDL = sql(s"SHOW CREATE TABLE ${table.quotedString}").head().getString(0)
-    // Drops original Hive table.
-    sql(s"DROP TABLE ${table.quotedString}")
-
-    try {
-      // Creates Spark datasource table using generated Spark DDL.
-      sql(sparkDDL)
-      val sparkTable = spark.sharedState.externalCatalog.getTable(db, table.table)
-      checkHiveCatalogTables(hiveTable, sparkTable)
-    } finally {
-      sql(s"DROP TABLE IF EXISTS ${table.table}")
-    }
-  }
-
-  private def checkHiveCatalogTables(hiveTable: CatalogTable, sparkTable: CatalogTable): Unit = {
-    def normalize(table: CatalogTable): CatalogTable = {
-      val nondeterministicProps = Set(
-        "CreateTime",
-        "transient_lastDdlTime",
-        "grantTime",
-        "lastUpdateTime",
-        "last_modified_by",
-        "last_modified_time",
-        "Owner:",
-        // The following are hive specific schema parameters which we do not need to match exactly.
-        "totalNumberFiles",
-        "maxFileSize",
-        "minFileSize"
-      )
-
-      table.copy(
-        createTime = 0L,
-        lastAccessTime = 0L,
-        properties = table.properties.filterKeys(!nondeterministicProps.contains(_)).toMap,
-        stats = None,
-        ignoredProperties = Map.empty,
-        storage = table.storage.copy(properties = Map.empty),
-        provider = None,
-        tracksPartitionsInCatalog = false
-      )
-    }
-
-    def fillSerdeFromProvider(table: CatalogTable): CatalogTable = {
-      table.provider.flatMap(HiveSerDe.sourceToSerDe(_)).map { hiveSerde =>
-        val newStorage = table.storage.copy(
-          inputFormat = hiveSerde.inputFormat,
-          outputFormat = hiveSerde.outputFormat,
-          serde = hiveSerde.serde
-        )
-        table.copy(storage = newStorage)
-      }.getOrElse(table)
-    }
-
-    assert(normalize(fillSerdeFromProvider(sparkTable)) == normalize(hiveTable))
   }
 
   test("simple hive table in Spark DDL") {
@@ -492,14 +365,75 @@ class HiveShowCreateTableSuite extends ShowCreateTableSuite with TestHiveSinglet
            |STORED AS ORC
          """.stripMargin
       )
-
-
       val cause = intercept[AnalysisException] {
         sql("SHOW CREATE TABLE t1")
       }
-
       assert(cause.getMessage.contains(
         "SHOW CREATE TABLE doesn't support transactional Hive table"))
     }
+  }
+
+  private def createRawHiveTable(ddl: String): Unit = {
+    hiveContext.sharedState.externalCatalog.unwrapped.asInstanceOf[HiveExternalCatalog]
+      .client.runSqlHive(ddl)
+  }
+
+  private def checkCreateSparkTableAsHive(tableName: String): Unit = {
+    val table = TableIdentifier(tableName, Some("default"))
+    val db = table.database.get
+    val hiveTable = spark.sharedState.externalCatalog.getTable(db, table.table)
+    val sparkDDL = sql(s"SHOW CREATE TABLE ${table.quotedString}").head().getString(0)
+    // Drops original Hive table.
+    sql(s"DROP TABLE ${table.quotedString}")
+
+    try {
+      // Creates Spark datasource table using generated Spark DDL.
+      sql(sparkDDL)
+      val sparkTable = spark.sharedState.externalCatalog.getTable(db, table.table)
+      checkHiveCatalogTables(hiveTable, sparkTable)
+    } finally {
+      sql(s"DROP TABLE IF EXISTS ${table.table}")
+    }
+  }
+
+  private def checkHiveCatalogTables(hiveTable: CatalogTable, sparkTable: CatalogTable): Unit = {
+    def normalize(table: CatalogTable): CatalogTable = {
+      val nondeterministicProps = Set(
+        "CreateTime",
+        "transient_lastDdlTime",
+        "grantTime",
+        "lastUpdateTime",
+        "last_modified_by",
+        "last_modified_time",
+        "Owner:",
+        // The following are hive specific schema parameters which we do not need to match exactly.
+        "totalNumberFiles",
+        "maxFileSize",
+        "minFileSize"
+      )
+
+      table.copy(
+        createTime = 0L,
+        lastAccessTime = 0L,
+        properties = table.properties.filterKeys(!nondeterministicProps.contains(_)).toMap,
+        stats = None,
+        ignoredProperties = Map.empty,
+        storage = table.storage.copy(properties = Map.empty),
+        provider = None,
+        tracksPartitionsInCatalog = false
+      )
+    }
+
+    def fillSerdeFromProvider(table: CatalogTable): CatalogTable = {
+      table.provider.flatMap(HiveSerDe.sourceToSerDe(_)).map { hiveSerde =>
+        val newStorage = table.storage.copy(
+          inputFormat = hiveSerde.inputFormat,
+          outputFormat = hiveSerde.outputFormat,
+          serde = hiveSerde.serde
+        )
+        table.copy(storage = newStorage)
+      }.getOrElse(table)
+    }
+    assert(normalize(fillSerdeFromProvider(sparkTable)) == normalize(hiveTable))
   }
 }
