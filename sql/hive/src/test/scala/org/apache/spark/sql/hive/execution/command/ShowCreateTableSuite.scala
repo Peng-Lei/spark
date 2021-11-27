@@ -31,28 +31,6 @@ import org.apache.spark.sql.internal.HiveSerDe
 class ShowCreateTableSuite extends v1.ShowCreateTableSuiteBase with CommandSuiteBase {
   override def commandVersion: String = super[ShowCreateTableSuiteBase].commandVersion
 
-  test("PERSISTED VIEW") {
-    Seq(true, false).foreach { serde =>
-      withView("v1") {
-        sql(
-          s"""
-             |CREATE VIEW v1 (
-             |  c1 COMMENT 'bla',
-             |  c2
-             |)
-             |COMMENT 'table comment'
-             |TBLPROPERTIES (
-             |  'prop1' = 'value1',
-             |  'prop2' = 'value2'
-             |)
-             |AS SELECT 1 AS c1, '2' AS c2
-         """.stripMargin
-        )
-        checkCreateView("v1", serde)
-      }
-    }
-  }
-
   test("simple external hive table") {
     withTempDir { dir =>
       withTable("t1") {

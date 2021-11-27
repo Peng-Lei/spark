@@ -22,8 +22,8 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.catalyst.util.escapeSingleQuotedString
-import org.apache.spark.sql.connector.catalog.{CatalogV2Util, Table, TableCatalog}
+import org.apache.spark.sql.catalyst.util.{escapeSingleQuotedString, CharVarcharUtils}
+import org.apache.spark.sql.connector.catalog.{CatalogV2Util, Table, TableCatalog, V1Table}
 import org.apache.spark.sql.execution.LeafExecNode
 import org.apache.spark.unsafe.types.UTF8String
 
@@ -57,14 +57,14 @@ case class ShowCreateTableExec(
   }
 
   private def showTableDataColumns(table: Table, builder: StringBuilder): Unit = {
-    val columns = table.schema().fields.map(_.toDDL)
+    val columns = CharVarcharUtils.getRawSchema(table.schema()).fields.map(_.toDDL)
     builder ++= concatByMultiLines(columns)
   }
 
   private def showTableUsing(table: Table, builder: StringBuilder): Unit = {
-    Option(table.properties.get(TableCatalog.PROP_PROVIDER))
-      .map("USING " + escapeSingleQuotedString(_) + "\n")
-      .foreach(builder.append)
+    builder.append("USING " + escapeSingleQuotedString(
+      Option(table.properties.get(TableCatalog.PROP_PROVIDER))
+        .getOrElse(table.asInstanceOf[V1Table].v1Table.provider.get)))
   }
 
   private def showTableOptions(
@@ -72,7 +72,7 @@ case class ShowCreateTableExec(
       tableOptions: Map[String, String]): Unit = {
     if (tableOptions.nonEmpty) {
       val props = tableOptions.toSeq.sortBy(_._1).map { case (key, value) =>
-        s"'${escapeSingleQuotedString(key)}' = '${escapeSingleQuotedString(value)}'"
+        s"`${escapeSingleQuotedString(key)}` `${escapeSingleQuotedString(value)}`"
       }
       builder ++= "OPTIONS"
       builder ++= concatByMultiLines(props)
@@ -109,7 +109,7 @@ case class ShowCreateTableExec(
           s"'${escapeSingleQuotedString(key)}' = '${escapeSingleQuotedString(value)}'"
       }
 
-      builder ++= "TBLPROPERTIES"
+      builder ++= "TBLPROPERTIES "
       builder ++= concatByMultiLines(props)
     }
   }

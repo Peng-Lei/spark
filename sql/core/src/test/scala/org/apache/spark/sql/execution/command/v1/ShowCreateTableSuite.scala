@@ -50,6 +50,28 @@ trait ShowCreateTableSuiteBase extends command.ShowCreateTableSuiteBase
     }
   }
 
+  test("PERSISTED VIEW") {
+    Seq(true, false).foreach { serde =>
+      withView("v1") {
+        sql(
+          s"""
+             |CREATE VIEW v1 (
+             |  c1 COMMENT 'bla',
+             |  c2
+             |)
+             |COMMENT 'table comment'
+             |TBLPROPERTIES (
+             |  'prop1' = 'value1',
+             |  'prop2' = 'value2'
+             |)
+             |AS SELECT 1 AS c1, '2' AS c2
+         """.stripMargin
+        )
+        checkCreateView("v1", serde)
+      }
+    }
+  }
+
   protected def checkCreateTable(table: String, serde: Boolean = false): Unit = {
     checkCreateTableOrView(TableIdentifier(table, Some("default")), "TABLE", serde)
   }
