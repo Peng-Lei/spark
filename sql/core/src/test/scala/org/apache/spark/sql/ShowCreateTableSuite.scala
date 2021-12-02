@@ -225,6 +225,25 @@ abstract class ShowCreateTableSuite extends QueryTest with SQLTestUtils {
       assert(getShowDDL("SHOW CREATE TABLE ddl_test") == expected)
     }
   }
+  test("xxx") {
+    val t = "SPARK_37517"
+    withTable(t) {
+      sql(
+        s"""
+           |CREATE TABLE $t (
+           |  price bigint NOT NULL,
+           |  qty bigint NOT NULL
+           |)
+           |USING PARQUET
+           |PARTITIONED BY (year bigint, month bigint)
+        """.stripMargin)
+      val r1 = getShowDDL(s"SHOW CREATE TABLE $t")
+      println(r1)
+      val r2 = sql(s"SHOW COLUMNS IN $t IN default")
+      r2.show()
+      println(r2)
+    }
+  }
 
   protected def getShowDDL(showCreateTableSql: String): String = {
     sql(showCreateTableSql).head().getString(0).split("\n").map(_.trim).mkString(" ")
