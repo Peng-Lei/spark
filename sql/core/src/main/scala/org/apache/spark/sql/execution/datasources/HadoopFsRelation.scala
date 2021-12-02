@@ -53,9 +53,16 @@ case class HadoopFsRelation(
   // When data and partition schemas have overlapping columns, the output
   // schema respects the order of the data schema for the overlapping columns, and it
   // respects the data types of the partition schema.
-  val (schema: StructType, overlappedPartCols: Map[String, StructField]) =
+  val (schema: StructType, overlappedPartCols: Map[String, StructField]) = {
+    // scalastyle:off println
+    println("HadoopFsRelation===================")
+    println(partitionSchema.toString())
+    println(partitionSchema.toString())
+    println("HadoopFsRelation end ===================")
+    // scalastyle:on println
     PartitioningUtils.mergeDataAndPartitionSchema(dataSchema,
       partitionSchema, sparkSession.sessionState.conf.caseSensitiveAnalysis)
+  }
 
   override def toString: String = {
     fileFormat match {

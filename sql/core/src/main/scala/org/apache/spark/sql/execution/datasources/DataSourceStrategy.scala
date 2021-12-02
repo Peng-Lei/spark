@@ -145,6 +145,10 @@ object DataSourceAnalysis extends Rule[LogicalPlan] with CastSupport {
 
     case CreateTable(tableDesc, mode, Some(query))
         if query.resolved && DDLUtils.isDatasourceTable(tableDesc) =>
+      // scalastyle:off println
+      println("penglei datasource strategy : ")
+      println(query.toString())
+      // scalastyle:on println
       CreateDataSourceTableAsSelectCommand(tableDesc, mode, query, query.output.map(_.name))
 
     case InsertIntoStatement(l @ LogicalRelation(_: InsertableRelation, _, _, _),

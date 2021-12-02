@@ -105,7 +105,7 @@ case class CreateDataSourceTableCommand(table: CatalogTable, ignoreIfExists: Boo
 
       case _ =>
         table.copy(
-          schema = dataSource.schema,
+          schema = table.schema.merge(dataSource.schema),
           partitionColumnNames = partitionColumnNames,
           // If metastore partition management for file source tables is enabled, we start off with
           // partition provider hive, but no partitions in the metastore. The user has to call
@@ -181,6 +181,10 @@ case class CreateDataSourceTableAsSelectCommand(
       val result = saveDataIntoTable(
         sparkSession, table, tableLocation, child, SaveMode.Overwrite, tableExists = false)
       val tableSchema = CharVarcharUtils.getRawSchema(result.schema, sessionState.conf)
+      // scalastyle:off println
+      println("CreateDataSourceTableAsSelectCommand penglei ctas : ")
+      println(tableSchema.toString())
+      // scalastyle:on println
       val newTable = table.copy(
         storage = table.storage.copy(locationUri = tableLocation),
         // We will use the schema of resolved.relation as the schema of the table (instead of
@@ -225,6 +229,10 @@ case class CreateDataSourceTableAsSelectCommand(
       catalogTable = if (tableExists) Some(table) else None)
 
     try {
+      // scalastyle:off println
+      println("saveDataIntoTable ctas columns")
+      outputColumnNames.foreach(println(_))
+      // scalastyle:on println
       dataSource.writeAndRead(mode, query, outputColumnNames, physicalPlan, metrics)
     } catch {
       case ex: AnalysisException =>

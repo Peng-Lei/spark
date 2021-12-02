@@ -522,6 +522,7 @@ abstract class DDLSuite extends QueryTest with SQLTestUtils {
 
   test("Create partitioned data source table without user specified schema") {
     import testImplicits._
+    // TODO
     val df = sparkContext.parallelize(1 to 10).map(i => (i, i.toString)).toDF("num", "str")
 
     // Case 1: with partitioning columns but no schema: Option("nonexistentColumns")
@@ -543,7 +544,7 @@ abstract class DDLSuite extends QueryTest with SQLTestUtils {
   test("Create partitioned data source table with user specified schema") {
     import testImplicits._
     val df = sparkContext.parallelize(1 to 10).map(i => (i, i.toString)).toDF("num", "str")
-
+    // TODO HIVE
     // Case 1: with partitioning columns but no schema: Option("num")
     // Case 2: without schema and partitioning columns: None
     Seq(Option("num"), None).foreach { partitionCols =>
@@ -563,7 +564,7 @@ abstract class DDLSuite extends QueryTest with SQLTestUtils {
   test("Create non-partitioned data source table without user specified schema") {
     import testImplicits._
     val df = sparkContext.parallelize(1 to 10).map(i => (i, i.toString)).toDF("num", "str")
-
+    // TODO HIVE
     // Case 1: with partitioning columns but no schema: Option("nonexistentColumns")
     // Case 2: without schema and partitioning columns: None
     Seq(Option("nonexistentColumns"), None).foreach { partitionCols =>
@@ -831,6 +832,7 @@ abstract class DDLSuite extends QueryTest with SQLTestUtils {
   }
 
   test("create table using - with partitioned by") {
+    // TODO HIVE
     val catalog = spark.sessionState.catalog
     withTable("tbl") {
       sql("CREATE TABLE tbl(a INT, b INT) USING parquet PARTITIONED BY (a)")

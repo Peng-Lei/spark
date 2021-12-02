@@ -186,7 +186,12 @@ case class PreprocessTableCreation(sparkSession: SparkSession) extends Rule[Logi
       } else {
         query
       }
-
+      // scalastyle:off println
+      println("penglei CreateTableV1 : ")
+      println(TableOutputResolver.resolveOutputColumns(
+        tableDesc.qualifiedName, existingTable.schema.toAttributes, newQuery,
+        byName = true, conf).toString())
+      // scalastyle:on println
       c.copy(
         tableDesc = existingTable,
         query = Some(TableOutputResolver.resolveOutputColumns(
@@ -209,33 +214,24 @@ case class PreprocessTableCreation(sparkSession: SparkSession) extends Rule[Logi
 
         val analyzedQuery = query.get
         val normalizedTable = normalizeCatalogTable(analyzedQuery.schema, tableDesc)
-
         DDLUtils.checkTableColumns(tableDesc.copy(schema = analyzedQuery.schema))
-
-        val output = analyzedQuery.output
-        val partitionAttrs = normalizedTable.partitionColumnNames.map { partCol =>
-          output.find(_.name == partCol).get
-        }
-        val newOutput = output.filterNot(partitionAttrs.contains) ++ partitionAttrs
-        val reorderedQuery = if (newOutput == output) {
-          analyzedQuery
-        } else {
-          Project(newOutput, analyzedQuery)
-        }
-
-        c.copy(tableDesc = normalizedTable, query = Some(reorderedQuery))
+        // scalastyle:off println
+        println("penglei if")
+        println(analyzedQuery.toString)
+        println("=====================================")
+        println(analyzedQuery.schema.toString)
+        println("=====================================")
+        println(normalizedTable.toString)
+        // scalastyle:on println
+        c.copy(tableDesc = normalizedTable, query = Some(analyzedQuery))
       } else {
         DDLUtils.checkTableColumns(tableDesc)
         val normalizedTable = normalizeCatalogTable(tableDesc.schema, tableDesc)
-
-        val partitionSchema = normalizedTable.partitionColumnNames.map { partCol =>
-          normalizedTable.schema.find(_.name == partCol).get
-        }
-
-        val reorderedSchema =
-          StructType(normalizedTable.schema.filterNot(partitionSchema.contains) ++ partitionSchema)
-
-        c.copy(tableDesc = normalizedTable.copy(schema = reorderedSchema))
+        // scalastyle:off println
+        println("penglei else")
+        println(normalizedTable.toString)
+        // scalastyle:on println
+        c.copy(tableDesc = normalizedTable)
       }
 
     case create: V2CreateTablePlan if create.childrenResolved =>
@@ -408,6 +404,10 @@ object PreprocessTableInsertion extends Rule[LogicalPlan] {
 
     val newQuery = TableOutputResolver.resolveOutputColumns(
       tblName, expectedColumns, insert.query, byName = false, conf)
+    // scalastyle:off println
+    println("penglei PreprocessTableInsertion : ")
+    println(newQuery.toString())
+    // scalastyle:on println
     if (normalizedPartSpec.nonEmpty) {
       if (normalizedPartSpec.size != partColNames.length) {
         throw QueryCompilationErrors.requestedPartitionsMismatchTablePartitionsError(

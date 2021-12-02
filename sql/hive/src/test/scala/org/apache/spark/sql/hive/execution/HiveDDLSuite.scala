@@ -2056,19 +2056,24 @@ class HiveDDLSuite
 
   test("partitioned table should always put partition columns at the end of table schema") {
     def getTableColumns(tblName: String): Seq[String] = {
+      val r = spark.sessionState.catalog.getTableMetadata(TableIdentifier(tblName)).toString
+      // scalastyle:off println
+      println("penglei partition")
+      println(r)
+      // scalastyle:on println
       spark.sessionState.catalog.getTableMetadata(TableIdentifier(tblName)).schema.map(_.name)
     }
 
     val provider = spark.sessionState.conf.defaultDataSourceName
     withTable("t", "t1", "t2", "t3", "t4", "t5", "t6") {
       sql(s"CREATE TABLE t(a int, b int, c int, d int) USING $provider PARTITIONED BY (d, b)")
-      assert(getTableColumns("t") == Seq("a", "c", "d", "b"))
+      assert(getTableColumns("t") == Seq("a", "b", "c", "d"))
 
       sql(s"CREATE TABLE t1 USING $provider PARTITIONED BY (d, b) AS SELECT 1 a, 1 b, 1 c, 1 d")
-      assert(getTableColumns("t1") == Seq("a", "c", "d", "b"))
+      assert(getTableColumns("t1") == Seq("a", "b", "c", "d"))
 
       Seq((1, 1, 1, 1)).toDF("a", "b", "c", "d").write.partitionBy("d", "b").saveAsTable("t2")
-      assert(getTableColumns("t2") == Seq("a", "c", "d", "b"))
+      assert(getTableColumns("t2") == Seq("a", "b", "c", "d"))
 
       withTempPath { path =>
         val dataPath = new File(new File(path, "d=1"), "b=1").getCanonicalPath
@@ -2079,15 +2084,17 @@ class HiveDDLSuite
       }
 
       sql("CREATE TABLE t4(a int, b int, c int, d int) USING hive PARTITIONED BY (d, b)")
-      assert(getTableColumns("t4") == Seq("a", "c", "d", "b"))
+      // TODO
+      getTableColumns("t4")
+      assert(getTableColumns("t4") == Seq("a", "b", "c", "d"))
 
       withSQLConf("hive.exec.dynamic.partition.mode" -> "nonstrict") {
         sql("CREATE TABLE t5 USING hive PARTITIONED BY (d, b) AS SELECT 1 a, 1 b, 1 c, 1 d")
-        assert(getTableColumns("t5") == Seq("a", "c", "d", "b"))
+        assert(getTableColumns("t5") == Seq("a", "b", "c", "d"))
 
         Seq((1, 1, 1, 1)).toDF("a", "b", "c", "d").write.format("hive")
           .partitionBy("d", "b").saveAsTable("t6")
-        assert(getTableColumns("t6") == Seq("a", "c", "d", "b"))
+        assert(getTableColumns("t6") == Seq("a", "b", "c", "d"))
       }
     }
   }

@@ -345,12 +345,24 @@ case class DataSource(
     val relation = (providingInstance(), userSpecifiedSchema) match {
       // TODO: Throw when too much is given.
       case (dataSource: SchemaRelationProvider, Some(schema)) =>
+        // scalastyle:off println
+        println("resolveRelation 1")
+        // scalastyle:on println
         dataSource.createRelation(sparkSession.sqlContext, caseInsensitiveOptions, schema)
       case (dataSource: RelationProvider, None) =>
+        // scalastyle:off println
+        println("resolveRelation 2")
+        // scalastyle:on println
         dataSource.createRelation(sparkSession.sqlContext, caseInsensitiveOptions)
       case (_: SchemaRelationProvider, None) =>
+        // scalastyle:off println
+        println("resolveRelation 3")
+        // scalastyle:on println
         throw QueryCompilationErrors.schemaNotSpecifiedForSchemaRelationProviderError(className)
       case (dataSource: RelationProvider, Some(schema)) =>
+        // scalastyle:off println
+        println("resolveRelation 4")
+        // scalastyle:on println
         val baseRelation =
           dataSource.createRelation(sparkSession.sqlContext, caseInsensitiveOptions)
         if (baseRelation.schema != schema) {
@@ -368,6 +380,9 @@ case class DataSource(
             caseInsensitiveOptions.get("path").toSeq ++ paths,
             newHadoopConfiguration(),
             sparkSession.sessionState.conf) =>
+        // scalastyle:off println
+        println("resolveRelation 5")
+        // scalastyle:on println
         val basePath = new Path((caseInsensitiveOptions.get("path").toSeq ++ paths).head)
         val fileCatalog = new MetadataLogFileIndex(sparkSession, basePath,
           caseInsensitiveOptions, userSpecifiedSchema)
@@ -393,6 +408,9 @@ case class DataSource(
 
       // This is a non-streaming file based datasource.
       case (format: FileFormat, _) =>
+        // scalastyle:off println
+        println("resolveRelation 6")
+        // scalastyle:on println
         val useCatalogFileIndex = sparkSession.sqlContext.conf.manageFilesourcePartitions &&
           catalogTable.isDefined && catalogTable.get.tracksPartitionsInCatalog &&
           catalogTable.get.partitionColumnNames.nonEmpty
@@ -402,16 +420,28 @@ case class DataSource(
             sparkSession,
             catalogTable.get,
             catalogTable.get.stats.map(_.sizeInBytes.toLong).getOrElse(defaultTableSize))
+          // scalastyle:off println
+          println("resolveRelation 6 catalogTable.get.dataSchema")
+          println(catalogTable.get.dataSchema.toString())
+          // scalastyle:on println
           (index, catalogTable.get.dataSchema, catalogTable.get.partitionSchema)
         } else {
+
           val globbedPaths = checkAndGlobPathIfNecessary(
             checkEmptyGlobPath = true, checkFilesExist = checkFilesExist)
           val index = createInMemoryFileIndex(globbedPaths)
           val (resultDataSchema, resultPartitionSchema) =
             getOrInferFileFormatSchema(format, () => index)
+          // scalastyle:off println
+          println("resolveRelation 6 resultDataSchema")
+          println(resultDataSchema.toString())
+          // scalastyle:on println
           (index, resultDataSchema, resultPartitionSchema)
         }
-
+        // scalastyle:off println
+        println("resolveRelation 6 dataschema")
+        println(dataSchema.toString())
+        // scalastyle:on println
         HadoopFsRelation(
           fileCatalog,
           partitionSchema = partitionSchema,
@@ -511,6 +541,12 @@ case class DataSource(
       outputColumnNames: Seq[String],
       physicalPlan: SparkPlan,
       metrics: Map[String, SQLMetric]): BaseRelation = {
+    // scalastyle:off println
+    println("ctas columns writeandread")
+    outputColumnNames.foreach(println(_))
+    println("data plan is")
+    println(data.toString)
+    // scalastyle:on println
     val outputColumns = DataWritingCommand.logicalPlanOutputWithNames(data, outputColumnNames)
     providingInstance() match {
       case dataSource: CreatableRelationProvider =>
@@ -532,11 +568,19 @@ case class DataSource(
               name, data.output.map(_.name).mkString(", "))
           }
         }
+        // scalastyle:off println
+        println("ctas columns writeandread 1")
+        outputColumnNames.foreach(println(_))
+        // scalastyle:on println
         val resolved = cmd.copy(
           partitionColumns = resolvedPartCols,
           outputColumnNames = outputColumnNames)
         resolved.run(sparkSession, physicalPlan)
         DataWritingCommand.propogateMetrics(sparkSession.sparkContext, resolved, metrics)
+        // scalastyle:off println
+        println("ctas columns writeandread 2")
+        outputColumnNames.foreach(println(_))
+        // scalastyle:on println
         // Replace the schema with that of the DataFrame we just wrote out to avoid re-inferring
         copy(userSpecifiedSchema = Some(outputColumns.toStructType.asNullable)).resolveRelation()
       case _ =>

@@ -780,20 +780,6 @@ private[spark] class HiveExternalCatalog(conf: SparkConf, hadoopConf: Configurat
       properties = table.properties.filterNot { case (key, _) => key.startsWith(SPARK_SQL_PREFIX) })
   }
 
-  // Reorder table schema to put partition columns at the end. Before Spark 2.2, the partition
-  // columns are not put at the end of schema. We need to reorder it when reading the schema
-  // from the table properties.
-  private def reorderSchema(schema: StructType, partColumnNames: Seq[String]): StructType = {
-    val partitionFields = partColumnNames.map { partCol =>
-      schema.find(_.name == partCol).getOrElse {
-        throw new AnalysisException("The metadata is corrupted. Unable to find the " +
-          s"partition column names from the schema. schema: ${schema.catalogString}. " +
-          s"Partition columns: ${partColumnNames.mkString("[", ", ", "]")}")
-      }
-    }
-    StructType(schema.filterNot(partitionFields.contains) ++ partitionFields)
-  }
-
   private def restoreHiveSerdeTable(table: CatalogTable): CatalogTable = {
     val options = new SourceOptions(table.storage.properties)
     val hiveTable = table.copy(
@@ -806,12 +792,11 @@ private[spark] class HiveExternalCatalog(conf: SparkConf, hadoopConf: Configurat
     if (maybeSchemaFromTableProps.isDefined) {
       val schemaFromTableProps = maybeSchemaFromTableProps.get
       val partColumnNames = getPartitionColumnsFromTableProperties(table)
-      val reorderedSchema = reorderSchema(schema = schemaFromTableProps, partColumnNames)
 
-      if (DataType.equalsIgnoreCaseAndNullability(reorderedSchema, table.schema) ||
+      if (DataType.equalsIgnoreCaseAndNullability(schemaFromTableProps, table.schema) ||
           options.respectSparkSchema) {
         hiveTable.copy(
-          schema = reorderedSchema,
+          schema = schemaFromTableProps,
           partitionColumnNames = partColumnNames,
           bucketSpec = getBucketSpecFromTableProperties(table))
       } else {
@@ -855,12 +840,11 @@ private[spark] class HiveExternalCatalog(conf: SparkConf, hadoopConf: Configurat
     val schemaFromTableProps =
       getSchemaFromTableProperties(table.properties).getOrElse(new StructType())
     val partColumnNames = getPartitionColumnsFromTableProperties(table)
-    val reorderedSchema = reorderSchema(schema = schemaFromTableProps, partColumnNames)
 
     table.copy(
       provider = Some(provider),
       storage = storageWithoutHiveGeneratedProperties,
-      schema = reorderedSchema,
+      schema = schemaFromTableProps,
       partitionColumnNames = partColumnNames,
       bucketSpec = getBucketSpecFromTableProperties(table),
       tracksPartitionsInCatalog = partitionProvider == Some(TABLE_PARTITION_PROVIDER_CATALOG),
