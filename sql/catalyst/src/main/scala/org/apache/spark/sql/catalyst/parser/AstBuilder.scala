@@ -3472,6 +3472,9 @@ class AstBuilder extends SqlBaseBaseVisitor[AnyRef] with SQLConfHelper with Logg
           ctx)
 
       case Some(query) =>
+        // scalastyle:off println
+        println("penglei astbulder with query============")
+        // scalastyle:on println
         CreateTableAsSelect(
           UnresolvedDBObjectName(table, isNamespace = false),
           partitioning, query, tableSpec, Map.empty, ifNotExists)
@@ -3479,6 +3482,9 @@ class AstBuilder extends SqlBaseBaseVisitor[AnyRef] with SQLConfHelper with Logg
       case _ =>
         // Note: table schema includes both the table columns list and the partition columns
         // with data type.
+        // scalastyle:off println
+        println("penglei astbuilder ============")
+        // scalastyle:on println
         val schema = StructType(columns ++ partCols)
         CreateTable(
           UnresolvedDBObjectName(table, isNamespace = false),

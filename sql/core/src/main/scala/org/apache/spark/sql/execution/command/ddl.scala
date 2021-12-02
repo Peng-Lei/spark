@@ -419,6 +419,11 @@ case class AlterTableSerDePropertiesCommand(
       val newTable = table.withNewStorage(
         serde = serdeClassName.orElse(table.storage.serde),
         properties = table.storage.properties ++ serdeProperties.getOrElse(Map()))
+      // scalastyle:off println
+      println("AlterTableSerDePropertiesCommand partSpec.isEmpty new table")
+      println(newTable.toString)
+      println(serdeProperties.toString)
+      // scalastyle:on println
       catalog.alterTable(newTable)
     } else {
       val spec = partSpec.get
@@ -426,6 +431,12 @@ case class AlterTableSerDePropertiesCommand(
       val newPart = part.copy(storage = part.storage.copy(
         serde = serdeClassName.orElse(part.storage.serde),
         properties = part.storage.properties ++ serdeProperties.getOrElse(Map())))
+      // scalastyle:off println
+      println("AlterTableSerDePropertiesCommand not partSpec.isEmpty new table")
+      println(part.toString)
+      println(newPart.toString)
+      println(serdeProperties.toString)
+      // scalastyle:on println
       catalog.alterPartitions(table.identifier, Seq(newPart))
     }
     Seq.empty[Row]

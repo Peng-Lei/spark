@@ -85,6 +85,10 @@ case class CreateTableLikeCommand(
     ifNotExists: Boolean) extends LeafRunnableCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
+    // scalastyle:off println
+    println("CreateTableLikeCommand begin =======")
+    println(sourceTable.toString)
+    // scalastyle:on println
     val catalog = sparkSession.sessionState.catalog
     val sourceTableDesc = catalog.getTempViewOrPermanentTableMetadata(sourceTable)
     val newProvider = if (provider.isDefined) {
@@ -165,6 +169,10 @@ case class CreateTableCommand(
     ignoreIfExists: Boolean) extends LeafRunnableCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
+    // scalastyle:off println
+    println("CreateTableCommand begin =======")
+    println(table.toString)
+    // scalastyle:on println
     sparkSession.sessionState.catalog.createTable(table, ignoreIfExists)
     Seq.empty[Row]
   }

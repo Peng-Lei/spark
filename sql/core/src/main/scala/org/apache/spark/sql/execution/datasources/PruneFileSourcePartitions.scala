@@ -58,6 +58,7 @@ private[sql] object PruneFileSourcePartitions
               _,
               _,
               _,
+              _,
               _),
             _,
             _,

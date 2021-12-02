@@ -45,7 +45,8 @@ case class HadoopFsRelation(
     dataSchema: StructType,
     bucketSpec: Option[BucketSpec],
     fileFormat: FileFormat,
-    options: Map[String, String])(val sparkSession: SparkSession)
+    options: Map[String, String],
+    schemaOrder: Option[StructType] = None)(val sparkSession: SparkSession)
   extends BaseRelation with FileRelation {
 
   override def sqlContext: SQLContext = sparkSession.sqlContext
@@ -54,7 +55,7 @@ case class HadoopFsRelation(
   // schema respects the order of the data schema for the overlapping columns, and it
   // respects the data types of the partition schema.
   val (schema: StructType, overlappedPartCols: Map[String, StructField]) =
-    PartitioningUtils.mergeDataAndPartitionSchema(dataSchema,
+    PartitioningUtils.mergeDataAndPartitionSchema(schemaOrder, dataSchema,
       partitionSchema, sparkSession.sessionState.conf.caseSensitiveAnalysis)
 
   override def toString: String = {

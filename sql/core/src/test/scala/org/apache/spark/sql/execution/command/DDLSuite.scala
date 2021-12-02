@@ -522,6 +522,7 @@ abstract class DDLSuite extends QueryTest with SQLTestUtils {
 
   test("Create partitioned data source table without user specified schema") {
     import testImplicits._
+    // TODO
     val df = sparkContext.parallelize(1 to 10).map(i => (i, i.toString)).toDF("num", "str")
 
     // Case 1: with partitioning columns but no schema: Option("nonexistentColumns")

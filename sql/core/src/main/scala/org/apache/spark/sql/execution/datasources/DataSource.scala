@@ -411,14 +411,24 @@ case class DataSource(
             getOrInferFileFormatSchema(format, () => index)
           (index, resultDataSchema, resultPartitionSchema)
         }
-
-        HadoopFsRelation(
+        // scalastyle:off println
+        println("penglei userSpecifiedSchema ============")
+        println(userSpecifiedSchema.toString)
+        println("penglei userSpecifiedSchema ============ end")
+        // scalastyle:on println
+        val testr = HadoopFsRelation(
           fileCatalog,
           partitionSchema = partitionSchema,
           dataSchema = dataSchema.asNullable,
           bucketSpec = bucketSpec,
           format,
           caseInsensitiveOptions)(sparkSession)
+        // scalastyle:off println
+        println("resolveRelation penglei ============")
+        println(testr.schema)
+        println("resolveRelation penglei ============end")
+        // scalastyle:on println
+        testr
 
       case _ =>
         throw QueryCompilationErrors.invalidDataSourceError(className)
@@ -520,6 +530,11 @@ case class DataSource(
       case format: FileFormat =>
         disallowWritingIntervals(outputColumns.map(_.dataType), forbidAnsiIntervals = false)
         val cmd = planForWritingFileFormat(format, mode, data)
+        // scalastyle:off println
+        println("writeAndRead cmd ==============")
+        println(cmd.toString())
+        println("writeAndRead cmd ============== end")
+        // scalastyle:on println
         val resolvedPartCols = cmd.partitionColumns.map { col =>
           // The partition columns created in `planForWritingFileFormat` should always be
           // `UnresolvedAttribute` with a single name part.
@@ -535,9 +550,25 @@ case class DataSource(
         val resolved = cmd.copy(
           partitionColumns = resolvedPartCols,
           outputColumnNames = outputColumnNames)
+        // scalastyle:off println
+        println("writeAndRead resolved ==============")
+        println(resolved.toString())
+        println("writeAndRead resolved ============== end")
+        // scalastyle:on println
         resolved.run(sparkSession, physicalPlan)
         DataWritingCommand.propogateMetrics(sparkSession.sparkContext, resolved, metrics)
         // Replace the schema with that of the DataFrame we just wrote out to avoid re-inferring
+        // scalastyle:off println
+        println("writeAndRead ==============")
+        println(outputColumns.toStructType.asNullable.toString())
+        println("writeAndRead ============== end")
+        // scalastyle:on println
+        // scalastyle:off println
+        println("writeAndRead xxx==============")
+        println(data.toString)
+        println(physicalPlan.toString)
+        println("writeAndRead xxx============== end")
+        // scalastyle:on println
         copy(userSpecifiedSchema = Some(outputColumns.toStructType.asNullable)).resolveRelation()
       case _ =>
         sys.error(s"${providingClass.getCanonicalName} does not allow create table as select.")

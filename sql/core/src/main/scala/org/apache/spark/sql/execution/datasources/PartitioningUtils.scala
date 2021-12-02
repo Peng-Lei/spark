@@ -581,6 +581,7 @@ object PartitioningUtils extends SQLConfHelper{
   }
 
   def mergeDataAndPartitionSchema(
+      schemaOrder: Option[StructType],
       dataSchema: StructType,
       partitionSchema: StructType,
       caseSensitive: Boolean): (StructType, Map[String, StructField]) = {
@@ -595,10 +596,20 @@ object PartitioningUtils extends SQLConfHelper{
     // When data and partition schemas have overlapping columns, the output
     // schema respects the order of the data schema for the overlapping columns, and it
     // respects the data types of the partition schema.
+    // scalastyle:off println
+    println("mergeDataAndPartitionSchema penglei ============")
+    println(schemaOrder.toString())
+    println("mergeDataAndPartitionSchema penglei ============end")
+    // scalastyle:on println
     val fullSchema =
     StructType(dataSchema.map(f => overlappedPartCols.getOrElse(getColName(f, caseSensitive), f)) ++
       partitionSchema.filterNot(f => overlappedPartCols.contains(getColName(f, caseSensitive))))
-    (fullSchema, overlappedPartCols.toMap)
+    if (schemaOrder.isDefined) {
+      (schemaOrder.get.merge(fullSchema), overlappedPartCols.toMap)
+    } else {
+      (fullSchema, overlappedPartCols.toMap)
+    }
+
   }
 
   def getColName(f: StructField, caseSensitive: Boolean): String = {

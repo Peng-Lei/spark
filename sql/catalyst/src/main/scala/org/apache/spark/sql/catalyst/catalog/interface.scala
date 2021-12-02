@@ -258,7 +258,9 @@ case class CatalogTable(
    * schema of this table's partition columns
    */
   def partitionSchema: StructType = {
-    val partitionFields = schema.takeRight(partitionColumnNames.length)
+    val partitionFields = partitionColumnNames.flatMap { partCol =>
+      schema.find(_.name == partCol)
+    }
     assert(partitionFields.map(_.name) == partitionColumnNames)
 
     StructType(partitionFields)
@@ -268,7 +270,9 @@ case class CatalogTable(
    * schema of this table's data columns
    */
   def dataSchema: StructType = {
-    val dataFields = schema.dropRight(partitionColumnNames.length)
+    val dataFields = schema.filterNot { col =>
+      partitionColumnNames.contains(col.name)
+    }
     StructType(dataFields)
   }
 

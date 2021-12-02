@@ -246,6 +246,10 @@ private[spark] class HiveExternalCatalog(conf: SparkConf, hadoopConf: Configurat
     val db = tableDefinition.identifier.database.get
     val table = tableDefinition.identifier.table
     requireDbExists(db)
+    // scalastyle:off println
+    println("hive catalog create table =======")
+    println(tableDefinition.toString)
+    // scalastyle:on println
     verifyTableProperties(tableDefinition)
     verifyDataSchema(
       tableDefinition.identifier, tableDefinition.tableType, tableDefinition.dataSchema)
@@ -268,6 +272,10 @@ private[spark] class HiveExternalCatalog(conf: SparkConf, hadoopConf: Configurat
     }
 
     if (DDLUtils.isDatasourceTable(tableDefinition)) {
+      // scalastyle:off println
+      println("hive catalog create table isDatasourceTable =======")
+      println(tableDefinition.toString)
+      // scalastyle:on println
       createDataSourceTable(
         tableDefinition.withNewStorage(locationUri = tableLocation),
         ignoreIfExists)
@@ -283,6 +291,10 @@ private[spark] class HiveExternalCatalog(conf: SparkConf, hadoopConf: Configurat
         // about not case preserving and make Hive serde table and view support mixed-case column
         // names.
         properties = tableDefinition.properties ++ tableMetaToTableProps(tableDefinition))
+      // scalastyle:off println
+      println("hive catalog create table not datasouce table =======")
+      println(tableWithDataSourceProps.toString)
+      // scalastyle:on println
       client.createTable(tableWithDataSourceProps, ignoreIfExists)
     }
   }
@@ -663,7 +675,12 @@ private[spark] class HiveExternalCatalog(conf: SparkConf, hadoopConf: Configurat
         bucketSpec = oldTableDef.bucketSpec,
         properties = newTableProps,
         owner = owner)
-
+      // scalastyle:off println
+      println("alterTable ===================================")
+      println(newTableProps.toString)
+      println(newDef.toString)
+      println("alterTable ===================================end")
+      // scalastyle:on println
       client.alterTable(newDef)
     }
   }
@@ -741,6 +758,10 @@ private[spark] class HiveExternalCatalog(conf: SparkConf, hadoopConf: Configurat
    * properties, and filter out these special entries from table properties.
    */
   private def restoreTableMetadata(inputTable: CatalogTable): CatalogTable = {
+    // scalastyle:off println
+    println("hive external catalog restoreTableMetadata =====")
+    println(inputTable.toString)
+    // scalastyle:on println
     if (conf.get(DEBUG_MODE)) {
       return inputTable
     }
@@ -757,10 +778,16 @@ private[spark] class HiveExternalCatalog(conf: SparkConf, hadoopConf: Configurat
 
       // No provider in table properties, which means this is a Hive serde table.
       case None =>
+        // scalastyle:off println
+        println("hive external catalog restoreHiveSerdeTable =====")
+        // scalastyle:on println
         table = restoreHiveSerdeTable(table)
 
       // This is a regular data source table.
       case Some(provider) =>
+        // scalastyle:off println
+        println("hive external catalog restoreDataSourceTable =====")
+        // scalastyle:on println
         table = restoreDataSourceTable(table, provider)
     }
 
@@ -807,11 +834,19 @@ private[spark] class HiveExternalCatalog(conf: SparkConf, hadoopConf: Configurat
       val schemaFromTableProps = maybeSchemaFromTableProps.get
       val partColumnNames = getPartitionColumnsFromTableProperties(table)
       val reorderedSchema = reorderSchema(schema = schemaFromTableProps, partColumnNames)
-
+      // scalastyle:off println
+      println("restoreHiveSerdeTable =======")
+      println(table.partitionColumnNames.toString())
+      println(partColumnNames.toString())
+      println(schemaFromTableProps.toString)
+      println(reorderedSchema.toString)
+      println(table.schema)
+      println("restoreHiveSerdeTable ======= end")
+      // scalastyle:on println
       if (DataType.equalsIgnoreCaseAndNullability(reorderedSchema, table.schema) ||
           options.respectSparkSchema) {
         hiveTable.copy(
-          schema = reorderedSchema,
+          schema = schemaFromTableProps,
           partitionColumnNames = partColumnNames,
           bucketSpec = getBucketSpecFromTableProperties(table))
       } else {
@@ -860,7 +895,7 @@ private[spark] class HiveExternalCatalog(conf: SparkConf, hadoopConf: Configurat
     table.copy(
       provider = Some(provider),
       storage = storageWithoutHiveGeneratedProperties,
-      schema = reorderedSchema,
+      schema = schemaFromTableProps,
       partitionColumnNames = partColumnNames,
       bucketSpec = getBucketSpecFromTableProperties(table),
       tracksPartitionsInCatalog = partitionProvider == Some(TABLE_PARTITION_PROVIDER_CATALOG),

@@ -48,7 +48,10 @@ case class CreateDataSourceTableCommand(table: CatalogTable, ignoreIfExists: Boo
   override def run(sparkSession: SparkSession): Seq[Row] = {
     assert(table.tableType != CatalogTableType.VIEW)
     assert(table.provider.isDefined)
-
+    // scalastyle:off println
+    println("CreateDataSourceTableCommand begin =======")
+    println(table.toString)
+    // scalastyle:on println
     val sessionState = sparkSession.sessionState
     if (sessionState.catalog.tableExists(table.identifier)) {
       if (ignoreIfExists) {
@@ -105,7 +108,7 @@ case class CreateDataSourceTableCommand(table: CatalogTable, ignoreIfExists: Boo
 
       case _ =>
         table.copy(
-          schema = dataSource.schema,
+          schema = table.schema.merge(dataSource.schema),
           partitionColumnNames = partitionColumnNames,
           // If metastore partition management for file source tables is enabled, we start off with
           // partition provider hive, but no partitions in the metastore. The user has to call
@@ -146,7 +149,10 @@ case class CreateDataSourceTableAsSelectCommand(
   override def run(sparkSession: SparkSession, child: SparkPlan): Seq[Row] = {
     assert(table.tableType != CatalogTableType.VIEW)
     assert(table.provider.isDefined)
-
+    // scalastyle:off println
+    println("CreateDataSourceTableAsSelectCommand begin =======")
+    println(table.toString)
+    // scalastyle:on println
     val sessionState = sparkSession.sessionState
     val db = table.identifier.database.getOrElse(sessionState.catalog.getCurrentDatabase)
     val tableIdentWithDB = table.identifier.copy(database = Some(db))
@@ -165,8 +171,12 @@ case class CreateDataSourceTableAsSelectCommand(
         return Seq.empty
       }
 
-      saveDataIntoTable(
+      val testr = saveDataIntoTable(
         sparkSession, table, table.storage.locationUri, child, SaveMode.Append, tableExists = true)
+      // scalastyle:off println
+      println("CreateDataSourceTableAsSelectCommand test r =======")
+      println(testr.toString)
+      // scalastyle:on println
     } else {
       table.storage.locationUri.foreach { p =>
         DataWritingCommand.assertEmptyRootPath(p, mode, sparkSession.sessionState.newHadoopConf)
@@ -178,8 +188,19 @@ case class CreateDataSourceTableAsSelectCommand(
       } else {
         table.storage.locationUri
       }
+
+      // scalastyle:off println
+      println("CreateDataSourceTableAsSelectCommand beafore result =======")
+      println(table.toString)
+      println("CreateDataSourceTableAsSelectCommand beafore result end =======")
+      // scalastyle:on println
+
       val result = saveDataIntoTable(
         sparkSession, table, tableLocation, child, SaveMode.Overwrite, tableExists = false)
+      // scalastyle:off println
+      println("CreateDataSourceTableAsSelectCommand result =======")
+      println(result.toString)
+      // scalastyle:on println
       val tableSchema = CharVarcharUtils.getRawSchema(result.schema, sessionState.conf)
       val newTable = table.copy(
         storage = table.storage.copy(locationUri = tableLocation),
@@ -189,7 +210,10 @@ case class CreateDataSourceTableAsSelectCommand(
         schema = tableSchema)
       // Table location is already validated. No need to check it again during table creation.
       sessionState.catalog.createTable(newTable, ignoreIfExists = false, validateLocation = false)
-
+      // scalastyle:off println
+      println("CreateDataSourceTableAsSelectCommand new table =======")
+      println(newTable.toString)
+      // scalastyle:on println
       result match {
         case fs: HadoopFsRelation if table.partitionColumnNames.nonEmpty &&
             sparkSession.sqlContext.conf.manageFilesourcePartitions =>
@@ -219,11 +243,18 @@ case class CreateDataSourceTableAsSelectCommand(
     val dataSource = DataSource(
       session,
       className = table.provider.get,
+      userSpecifiedSchema = if (table.schema.isEmpty) None else Some(table.schema),
       partitionColumns = table.partitionColumnNames,
       bucketSpec = table.bucketSpec,
       options = table.storage.properties ++ pathOption,
       catalogTable = if (tableExists) Some(table) else None)
-
+    // scalastyle:off println
+    println("saveDataIntoTable =================")
+    println(dataSource.toString)
+    println("=================")
+    println(query.toString)
+    println("saveDataIntoTable ================= end")
+    // scalastyle:on println
     try {
       dataSource.writeAndRead(mode, query, outputColumnNames, physicalPlan, metrics)
     } catch {

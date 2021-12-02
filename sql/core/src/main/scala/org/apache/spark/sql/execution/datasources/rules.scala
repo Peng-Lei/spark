@@ -95,6 +95,9 @@ case class PreprocessTableCreation(sparkSession: SparkSession) extends Rule[Logi
     // Since the runtime inferred partition columns could be different from what user specified,
     // we fail the query if the partitioning information is specified.
     case c @ CreateTableV1(tableDesc, _, None) if tableDesc.schema.isEmpty =>
+      // scalastyle:off println
+      println("penglei rule 1 ============")
+      // scalastyle:on println
       if (tableDesc.bucketSpec.isDefined) {
         failAnalysis("Cannot specify bucketing information if the table schema is not specified " +
           "when creating and will be inferred at runtime")
@@ -111,6 +114,9 @@ case class PreprocessTableCreation(sparkSession: SparkSession) extends Rule[Logi
     // if necessary.
     case c @ CreateTableV1(tableDesc, SaveMode.Append, Some(query))
         if query.resolved && catalog.tableExists(tableDesc.identifier) =>
+      // scalastyle:off println
+      println("penglei rule 2 ============")
+      // scalastyle:on println
       // This is guaranteed by the parser and `DataFrameWriter`
       assert(tableDesc.provider.isDefined)
 
@@ -203,39 +209,27 @@ case class PreprocessTableCreation(sparkSession: SparkSession) extends Rule[Logi
     //   * sort columns' type must be orderable.
     //   * reorder table schema or output of query plan, to put partition columns at the end.
     case c @ CreateTableV1(tableDesc, _, query) if query.forall(_.resolved) =>
+      // scalastyle:off println
+      println("penglei rule 3 ============")
+      // scalastyle:on println
       if (query.isDefined) {
+        // scalastyle:off println
+        println("penglei rule 31 ============")
+        // scalastyle:on println
         assert(tableDesc.schema.isEmpty,
           "Schema may not be specified in a Create Table As Select (CTAS) statement")
 
         val analyzedQuery = query.get
         val normalizedTable = normalizeCatalogTable(analyzedQuery.schema, tableDesc)
-
         DDLUtils.checkTableColumns(tableDesc.copy(schema = analyzedQuery.schema))
-
-        val output = analyzedQuery.output
-        val partitionAttrs = normalizedTable.partitionColumnNames.map { partCol =>
-          output.find(_.name == partCol).get
-        }
-        val newOutput = output.filterNot(partitionAttrs.contains) ++ partitionAttrs
-        val reorderedQuery = if (newOutput == output) {
-          analyzedQuery
-        } else {
-          Project(newOutput, analyzedQuery)
-        }
-
-        c.copy(tableDesc = normalizedTable, query = Some(reorderedQuery))
+        c.copy(tableDesc = normalizedTable)
       } else {
+        // scalastyle:off println
+        println("penglei rule 32 ============")
+        // scalastyle:on println
         DDLUtils.checkTableColumns(tableDesc)
         val normalizedTable = normalizeCatalogTable(tableDesc.schema, tableDesc)
-
-        val partitionSchema = normalizedTable.partitionColumnNames.map { partCol =>
-          normalizedTable.schema.find(_.name == partCol).get
-        }
-
-        val reorderedSchema =
-          StructType(normalizedTable.schema.filterNot(partitionSchema.contains) ++ partitionSchema)
-
-        c.copy(tableDesc = normalizedTable.copy(schema = reorderedSchema))
+        c.copy(tableDesc = normalizedTable)
       }
 
     case create: V2CreateTablePlan if create.childrenResolved =>
@@ -385,10 +379,26 @@ object PreprocessTableInsertion extends Rule[LogicalPlan] {
 
     val normalizedPartSpec = normalizePartitionSpec(
       insert.partitionSpec, partColNames, tblName, conf.resolver)
-
+    // scalastyle:off println
+    println("normalizedPartSpec =======")
+    println(normalizedPartSpec.toString())
+    // scalastyle:on println
     val staticPartCols = normalizedPartSpec.filter(_._2.isDefined).keySet
+    // scalastyle:off println
+    println("staticPartCols =======")
+    println(staticPartCols.toString())
+    // scalastyle:on println
     val expectedColumns = insert.table.output.filterNot(a => staticPartCols.contains(a.name))
-
+    // scalastyle:off println
+    println("expectedColumns =======")
+    println(expectedColumns.toString())
+    // scalastyle:on println
+    if (catalogTable.isDefined) {
+      // scalastyle:off println
+      println("catalogTable =======")
+      println(catalogTable.toString())
+      // scalastyle:on println
+    }
     if (expectedColumns.length != insert.query.schema.length) {
       throw QueryCompilationErrors.mismatchedInsertedDataColumnNumberError(
         tblName, insert, staticPartCols)

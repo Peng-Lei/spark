@@ -196,6 +196,10 @@ class InMemoryCatalog(
     val db = tableDefinition.identifier.database.get
     requireDbExists(db)
     val table = tableDefinition.identifier.table
+    // scalastyle:off println
+    println("in memory catalog create table =======")
+    println(table.toString)
+    // scalastyle:on println
     if (tableExists(db, table)) {
       if (!ignoreIfExists) {
         throw new TableAlreadyExistsException(db = db, table = table)

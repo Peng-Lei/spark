@@ -151,11 +151,18 @@ class ResolveSessionCatalog(val catalogManager: CatalogManager)
         c.tableSpec.serde,
         ctas = false)
       if (isSessionCatalog(catalog) && !isV2Provider(provider)) {
+        // scalastyle:off println
+        println("penglei resolve session catalog with out query ============")
+
+
         val tableDesc = buildCatalogTable(name.asTableIdentifier, c.tableSchema,
           c.partitioning, c.tableSpec.bucketSpec, c.tableSpec.properties, provider,
           c.tableSpec.location, c.tableSpec.comment, storageFormat,
           c.tableSpec.external)
         val mode = if (c.ignoreIfExists) SaveMode.Ignore else SaveMode.ErrorIfExists
+        println(tableDesc.toString)
+        println("penglei resolve session catalog with out query ============ end")
+        // scalastyle:on println
         CreateTableV1(tableDesc, mode, None)
       } else {
         val newTableSpec = c.tableSpec.copy(bucketSpec = None)
@@ -169,10 +176,16 @@ class ResolveSessionCatalog(val catalogManager: CatalogManager)
         c.tableSpec.provider, c.tableSpec.options, c.tableSpec.location, c.tableSpec.serde,
         ctas = true)
       if (!isV2Provider(provider)) {
+        // scalastyle:off println
+        println("penglei resolve session catalog as select============")
+
         val tableDesc = buildCatalogTable(name.asTableIdentifier, new StructType,
           c.partitioning, c.tableSpec.bucketSpec, c.tableSpec.properties, provider,
           c.tableSpec.location, c.tableSpec.comment, storageFormat, c.tableSpec.external)
         val mode = if (c.ignoreIfExists) SaveMode.Ignore else SaveMode.ErrorIfExists
+        println(tableDesc.toString)
+        println("penglei resolve session catalog as select============ end")
+        // scalastyle:on println
         CreateTableV1(tableDesc, mode, Some(c.query))
       } else {
         val newTableSpec = c.tableSpec.copy(bucketSpec = None)
