@@ -37,6 +37,9 @@ SHOW CREATE TABLE table_identifier
 
     **Syntax:** `[ database_name. ] table_name`
 
+* **table_identifier**
+    Just for generating hive ddl for hive serde table
+
 ### Examples
 
 ```sql
